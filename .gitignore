@@ -37,7 +37,7 @@ Thumbs.db
 # MongoDB
 *.log
 
-# SonarQube temporary files
-.scannerwork/
-**/.scannerwork/
+# SonarQube temporary files (included per user request)
+# .scannerwork/
+# **/.scannerwork/
 
