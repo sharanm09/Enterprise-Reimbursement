@@ -22,36 +22,54 @@ export function applyStatusFilter(items, statusFilter, selectedStatuses) {
   return items;
 }
 
+function getItemDate(item) {
+  return new Date(item.created_at || item.updated_at);
+}
+
+function filterByStartDate(items, dateRangeStart) {
+  if (!dateRangeStart) {
+    return items;
+  }
+  const startDate = new Date(dateRangeStart);
+  return items.filter(item => {
+    const itemDate = getItemDate(item);
+    return itemDate >= startDate;
+  });
+}
+
+function filterByEndDate(items, dateRangeEnd) {
+  if (!dateRangeEnd) {
+    return items;
+  }
+  const endDate = new Date(dateRangeEnd);
+  endDate.setHours(23, 59, 59, 999);
+  return items.filter(item => {
+    const itemDate = getItemDate(item);
+    return itemDate <= endDate;
+  });
+}
+
 export function applyDateRangeFilter(items, dateRangeStart, dateRangeEnd) {
   let filtered = [...items];
-  
-  if (dateRangeStart) {
-    filtered = filtered.filter(item => {
-      const itemDate = new Date(item.created_at || item.updated_at);
-      return itemDate >= new Date(dateRangeStart);
-    });
-  }
-  
-  if (dateRangeEnd) {
-    filtered = filtered.filter(item => {
-      const itemDate = new Date(item.created_at || item.updated_at);
-      const endDate = new Date(dateRangeEnd);
-      endDate.setHours(23, 59, 59, 999);
-      return itemDate <= endDate;
-    });
-  }
-  
+  filtered = filterByStartDate(filtered, dateRangeStart);
+  filtered = filterByEndDate(filtered, dateRangeEnd);
   return filtered;
+}
+
+function applyFilterChain(items, filterFunctions) {
+  return filterFunctions.reduce((filteredItems, filterFn) => filterFn(filteredItems), items);
 }
 
 export function applyAllFilters(items, filters) {
   const { search, searchFields, statusFilter, selectedStatuses, dateRangeStart, dateRangeEnd } = filters;
   
-  let filtered = applySearchFilter(items, search, searchFields);
-  filtered = applyStatusFilter(filtered, statusFilter, selectedStatuses);
-  filtered = applyDateRangeFilter(filtered, dateRangeStart, dateRangeEnd);
+  const filterChain = [
+    (items) => applySearchFilter(items, search, searchFields),
+    (items) => applyStatusFilter(items, statusFilter, selectedStatuses),
+    (items) => applyDateRangeFilter(items, dateRangeStart, dateRangeEnd)
+  ];
   
-  return filtered;
+  return applyFilterChain(items, filterChain);
 }
 
 

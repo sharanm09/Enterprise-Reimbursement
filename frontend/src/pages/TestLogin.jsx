@@ -42,7 +42,7 @@ const TestLogin = () => {
       );
       
       if (response.data.success) {
-        window.location.href = '/dashboard';
+        globalThis.location.href = '/dashboard';
       } else {
         setError(response.data.message || 'Login failed');
       }

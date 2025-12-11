@@ -9,11 +9,7 @@ import {
   FiDollarSign, 
   FiFolder,
   FiCalendar,
-  FiX,
-  FiSearch,
-  FiPlus,
-  FiArrowUp,
-  FiArrowDown
+  FiX
 } from 'react-icons/fi';
 import axios from 'axios';
 import logger from '../utils/logger';
@@ -85,14 +81,14 @@ const Dashboard = ({ user }) => {
             dashboardStats = statsResponse.data.data;
           }
         } catch (statsError) {
-          logger.info('Stats API not available, using default values');
+          logger.info('Stats API not available, using default values', statsError);
         }
 
         if (statsCards.length > 0) {
           const cardTitles = new Set();
           const updatedCards = [];
           
-          dashboardStats.cards?.forEach(dynamicCard => {
+          for (const dynamicCard of dashboardStats.cards || []) {
             if (!cardTitles.has(dynamicCard.title)) {
               cardTitles.add(dynamicCard.title);
               const staticCard = statsCards.find(c => c.title === dynamicCard.title);
@@ -103,9 +99,9 @@ const Dashboard = ({ user }) => {
                 subtitle: dynamicCard.subtitle || staticCard?.subtitle || ''
               });
             }
-          });
+          }
 
-          statsCards.forEach(staticCard => {
+          for (const staticCard of statsCards) {
             if (!cardTitles.has(staticCard.title)) {
               cardTitles.add(staticCard.title);
               updatedCards.push({
@@ -114,7 +110,7 @@ const Dashboard = ({ user }) => {
                 subtitle: staticCard.subtitle || ''
               });
             }
-          });
+          }
 
           setStats({
             ...dashboardStats,
@@ -123,12 +119,12 @@ const Dashboard = ({ user }) => {
         } else {
           const uniqueCards = [];
           const cardTitles = new Set();
-          dashboardStats.cards?.forEach(card => {
+          for (const card of dashboardStats.cards || []) {
             if (!cardTitles.has(card.title)) {
               cardTitles.add(card.title);
               uniqueCards.push(card);
             }
-          });
+          }
           setStats({
             ...dashboardStats,
             cards: uniqueCards
@@ -178,18 +174,6 @@ const Dashboard = ({ user }) => {
     setDateRangeEnd('');
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount || 0);
-  };
-
-  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#6366f1'];
-  const PURPLE_COLORS = ['#8b5cf6', '#6366f1', '#a855f7', '#9333ea', '#7c3aed', '#6d28d9'];
-
   const iconMap = {
     'FiFileText': FiFileText,
     'FiCheckCircle': FiCheckCircle,
@@ -205,12 +189,6 @@ const Dashboard = ({ user }) => {
     if (hour < 12) return 'Good Morning';
     if (hour < 18) return 'Good Afternoon';
     return 'Good Evening';
-  };
-
-  const calculateTrend = (current, previous) => {
-    if (!previous || previous === 0) return { value: 0, isPositive: true };
-    const change = ((current - previous) / previous) * 100;
-    return { value: Math.abs(change).toFixed(1), isPositive: change >= 0 };
   };
 
   const getStatusColor = (status) => {
@@ -233,31 +211,13 @@ const Dashboard = ({ user }) => {
     }
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-  };
-
   // Calculate totals for key metrics with safe defaults
   const monthlyTrend = chartData.monthlyTrend || [];
   const statusDistribution = chartData.statusDistribution || [];
-  const departmentWise = chartData.departmentWise || [];
-  const weeklyTrend = chartData.weeklyTrend || [];
-  const dailyData = chartData.dailyData || [];
-  const categoryWise = chartData.categoryWise || [];
 
   const totalReimbursements = monthlyTrend.reduce((sum, item) => sum + (item.count || 0), 0);
-  const totalAmount = monthlyTrend.reduce((sum, item) => sum + (item.amount || 0), 0);
   const totalPending = statusDistribution.find(s => s.name === 'Pending')?.value || 0;
   const totalApproved = statusDistribution.find(s => s.name === 'Approved by Finance')?.value || 0;
-
-  // Prepare radar chart data
-  const radarData = departmentWise.slice(0, 6).map(dept => ({
-    subject: (dept.department || 'N/A').substring(0, 8),
-    value: dept.amount || 0,
-    fullMark: Math.max(...departmentWise.map(d => d.amount || 0), 1000)
-  }));
 
   if (loading) {
     return (
@@ -419,8 +379,8 @@ const Dashboard = ({ user }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {stats.recentReimbursements.map((item, index) => (
-                    <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  {stats.recentReimbursements.map((item) => (
+                    <tr key={item.id || `recent-${item.name}-${item.date}`} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                       <td className="py-1.5 px-2 text-[10px] text-gray-900 font-medium">{item.name}</td>
                       <td className="py-1.5 px-2 text-[10px] text-gray-600">{item.date}</td>
                       <td className="py-1.5 px-2 text-[10px] text-gray-600">{item.department_name || 'N/A'}</td>
@@ -464,8 +424,8 @@ const Dashboard = ({ user }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {stats.pendingApprovals.map((item, index) => (
-                    <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  {stats.pendingApprovals.map((item) => (
+                    <tr key={item.id || `pending-${item.name}-${item.date}`} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                       <td className="py-1.5 px-2 text-[10px] text-gray-900 font-medium">{item.name}</td>
                       <td className="py-1.5 px-2 text-[10px] text-gray-600">{item.date}</td>
                       <td className="py-1.5 px-2 text-[10px] text-gray-600">{item.department_name || 'N/A'}</td>

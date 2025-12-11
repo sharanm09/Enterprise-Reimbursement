@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import axios from 'axios';
 import logger from '../utils/logger';
-import { FiFileText, FiCalendar, FiXCircle, FiEye, FiPlus, FiSearch, FiFilter, FiX } from 'react-icons/fi';
+import { FiFileText, FiXCircle, FiEye, FiPlus, FiSearch, FiFilter, FiX } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 
 const MyReimbursements = ({ user }) => {
@@ -176,7 +176,10 @@ const MyReimbursements = ({ user }) => {
   const getTotalPendingAmount = (reimbursement) => {
     if (!reimbursement.items || reimbursement.items.length === 0) return 0;
     return reimbursement.items
-      .filter(item => !item.status || !item.status.toLowerCase().includes('approved') && !item.status.toLowerCase().includes('rejected'))
+      .filter(item => {
+        const status = item.status?.toLowerCase() || '';
+        return !status.includes('approved') && !status.includes('rejected');
+      })
       .reduce((sum, item) => sum + Number.parseFloat(item.amount || 0), 0);
   };
 
@@ -250,8 +253,9 @@ const MyReimbursements = ({ user }) => {
                 <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50 p-3">
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-[9px] font-medium text-gray-600 mb-2">Status</label>
+                      <label htmlFor="status_filter" className="block text-[9px] font-medium text-gray-600 mb-2">Status</label>
                       <select
+                        id="status_filter"
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
                         className="w-full text-[9px] border border-gray-300 rounded px-2 py-1 text-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
@@ -268,9 +272,10 @@ const MyReimbursements = ({ user }) => {
                     </div>
                     
                     <div>
-                      <label className="block text-[9px] font-medium text-gray-600 mb-2">Date Range</label>
+                      <label htmlFor="date_range_start" className="block text-[9px] font-medium text-gray-600 mb-2">Date Range</label>
                       <div className="space-y-2">
                         <input
+                          id="date_range_start"
                           type="date"
                           value={dateRangeStart}
                           onChange={(e) => setDateRangeStart(e.target.value)}
@@ -278,6 +283,7 @@ const MyReimbursements = ({ user }) => {
                           placeholder="Start Date"
                         />
                         <input
+                          id="date_range_end"
                           type="date"
                           value={dateRangeEnd}
                           onChange={(e) => setDateRangeEnd(e.target.value)}
@@ -517,7 +523,7 @@ const MyReimbursements = ({ user }) => {
                   <div className="space-y-1">
                     {selectedReimbursement.attachments.map((attachment) => (
                       <a
-                        key={attachment.id}
+                        key={attachment.id || attachment.file_path}
                         href={`${process.env.REACT_APP_API_URL?.replace('/api', '')}${attachment.file_path}`}
                         target="_blank"
                         rel="noopener noreferrer"

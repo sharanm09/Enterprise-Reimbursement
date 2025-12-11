@@ -157,7 +157,7 @@ export function useMasterData(entityName, apiEndpoint, options = {}) {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm(`Are you sure you want to deactivate this ${entityName}?`)) {
+    if (!globalThis.confirm(`Are you sure you want to deactivate this ${entityName}?`)) {
       return;
     }
 

@@ -18,6 +18,80 @@ function validateNameAndCode(name, code, additionalFields = {}) {
   return errors;
 }
 
+// Helper function to detect table alias from selectFields
+function detectAliasFromSelectFields(selectFields) {
+  const aliasMatch = selectFields.match(/^([a-z]+)\./);
+  return aliasMatch ? aliasMatch[1] : null;
+}
+
+// Helper function to detect table alias from joinClause
+function detectAliasFromJoinClause(joinClause) {
+  if (!joinClause.includes(' ON ')) {
+    return null;
+  }
+  const joinAliasMatch = joinClause.match(/ON\s+([a-z]+)\./);
+  return joinAliasMatch ? joinAliasMatch[1] : null;
+}
+
+// Helper function to determine main table alias
+function determineTableAlias(tableAlias, selectFields, joinClause) {
+  if (tableAlias) {
+    return tableAlias;
+  }
+  return detectAliasFromSelectFields(selectFields) || detectAliasFromJoinClause(joinClause);
+}
+
+// Helper function to qualify field name with alias
+function qualifyField(field, alias) {
+  return alias ? `${alias}.${field}` : field;
+}
+
+// Helper function to build FROM clause
+function buildFromClause(tableName, alias) {
+  return alias ? `${tableName} ${alias}` : tableName;
+}
+
+// Helper function to add status filter to query
+function addStatusFilter(query, params, paramCount, qualifiedStatusField, status) {
+  if (!status || status === 'all') {
+    return { query, params, paramCount };
+  }
+  const newParamCount = paramCount + 1;
+  const newQuery = query + ` AND ${qualifiedStatusField} = $${newParamCount}`;
+  const newParams = [...params, status];
+  return { query: newQuery, params: newParams, paramCount: newParamCount };
+}
+
+// Helper function to add search filter to query
+function addSearchFilter(query, params, paramCount, qualifiedSearchFields, search) {
+  if (!search) {
+    return { query, params, paramCount };
+  }
+  const newParamCount = paramCount + 1;
+  const searchConditions = qualifiedSearchFields.map(field => `${field} ILIKE $${newParamCount}`).join(' OR ');
+  const newQuery = query + ` AND (${searchConditions})`;
+  const newParams = [...params, `%${search}%`];
+  return { query: newQuery, params: newParams, paramCount: newParamCount };
+}
+
+// Helper function to add additional filters to query
+function addAdditionalFilters(query, params, paramCount, additionalFilters, mainTableAlias) {
+  let currentQuery = query;
+  let currentParams = [...params];
+  let currentParamCount = paramCount;
+  
+  for (const [field, value] of Object.entries(additionalFilters)) {
+    if (field !== 'status' && field !== 'search' && value !== undefined && value !== null) {
+      currentParamCount++;
+      const qualifiedField = qualifyField(field, mainTableAlias);
+      currentQuery += ` AND ${qualifiedField} = $${currentParamCount}`;
+      currentParams.push(value);
+    }
+  }
+  
+  return { query: currentQuery, params: currentParams, paramCount: currentParamCount };
+}
+
 // Common GET handler with search and status filter
 async function handleGetWithFilters(tableName, options = {}) {
   const {
@@ -31,57 +105,28 @@ async function handleGetWithFilters(tableName, options = {}) {
     tableAlias = null
   } = options;
   
-  // Determine table alias - use provided alias or detect from selectFields/joinClause
-  let mainTableAlias = tableAlias;
-  if (!mainTableAlias) {
-    // Detect alias from selectFields (e.g., 'd.*' or 'cc.*')
-    const aliasMatch = selectFields.match(/^([a-z]+)\./);
-    if (aliasMatch) {
-      mainTableAlias = aliasMatch[1];
-    } else if (joinClause.includes(' ON ')) {
-      // Detect from join clause (e.g., 'LEFT JOIN cost_centers cc ON d.id')
-      const joinAliasMatch = joinClause.match(/ON\s+([a-z]+)\./);
-      if (joinAliasMatch) {
-        mainTableAlias = joinAliasMatch[1];
-      }
-    }
-  }
-  
-  // Build FROM clause with alias if needed
-  const fromClause = mainTableAlias ? `${tableName} ${mainTableAlias}` : tableName;
-  const qualifiedStatusField = mainTableAlias ? `${mainTableAlias}.${statusField}` : statusField;
-  const qualifiedSearchFields = searchFields.map(field => 
-    mainTableAlias ? `${mainTableAlias}.${field}` : field
-  );
+  const mainTableAlias = determineTableAlias(tableAlias, selectFields, joinClause);
+  const fromClause = buildFromClause(tableName, mainTableAlias);
+  const qualifiedStatusField = qualifyField(statusField, mainTableAlias);
+  const qualifiedSearchFields = searchFields.map(field => qualifyField(field, mainTableAlias));
   
   let query = `SELECT ${selectFields} FROM ${fromClause} ${joinClause} WHERE 1=1`;
-  const params = [];
+  let params = [];
   let paramCount = 0;
   
-  // Status filter
-  if (additionalFilters.status && additionalFilters.status !== 'all') {
-    paramCount++;
-    query += ` AND ${qualifiedStatusField} = $${paramCount}`;
-    params.push(additionalFilters.status);
-  }
+  const statusResult = addStatusFilter(query, params, paramCount, qualifiedStatusField, additionalFilters.status);
+  query = statusResult.query;
+  params = statusResult.params;
+  paramCount = statusResult.paramCount;
   
-  // Search filter
-  if (additionalFilters.search) {
-    paramCount++;
-    const searchConditions = qualifiedSearchFields.map(field => `${field} ILIKE $${paramCount}`).join(' OR ');
-    query += ` AND (${searchConditions})`;
-    params.push(`%${additionalFilters.search}%`);
-  }
+  const searchResult = addSearchFilter(query, params, paramCount, qualifiedSearchFields, additionalFilters.search);
+  query = searchResult.query;
+  params = searchResult.params;
+  paramCount = searchResult.paramCount;
   
-  // Additional filters - qualify field names with table alias if needed
-  for (const [field, value] of Object.entries(additionalFilters)) {
-    if (field !== 'status' && field !== 'search' && value !== undefined && value !== null) {
-      paramCount++;
-      const qualifiedField = mainTableAlias ? `${mainTableAlias}.${field}` : field;
-      query += ` AND ${qualifiedField} = $${paramCount}`;
-      params.push(value);
-    }
-  }
+  const additionalResult = addAdditionalFilters(query, params, paramCount, additionalFilters, mainTableAlias);
+  query = additionalResult.query;
+  params = additionalResult.params;
   
   if (groupBy) {
     query += ` ${groupBy}`;

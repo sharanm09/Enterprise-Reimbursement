@@ -11,7 +11,9 @@ import {
   FiCheckCircle, 
   FiList, 
   FiChevronDown,
-  FiLogOut
+  FiLogOut,
+  FiMenu,
+  FiX
 } from 'react-icons/fi';
 import bgImage from '../images/bg.png';
 
@@ -19,7 +21,9 @@ const Layout = ({ children, user, onLogout, onNavigate, currentPage }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [hoverTimeout, setHoverTimeout] = useState(null);
+  const [isManuallyToggled, setIsManuallyToggled] = useState(false);
   const dropdownRef = useRef(null);
+  const sidebarRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -36,6 +40,34 @@ const Layout = ({ children, user, onLogout, onNavigate, currentPage }) => {
       }
     };
   }, [hoverTimeout]);
+
+  const toggleSidebar = () => {
+    setIsManuallyToggled(true);
+    setSidebarOpen(prev => !prev);
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout);
+      setHoverTimeout(null);
+    }
+  };
+
+  const handleSidebarMouseEnter = () => {
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout);
+      setHoverTimeout(null);
+    }
+    if (!sidebarOpen && !isManuallyToggled) {
+      setSidebarOpen(true);
+    }
+  };
+
+  const handleSidebarMouseLeave = () => {
+    if (!isManuallyToggled && sidebarOpen) {
+      const timeout = setTimeout(() => {
+        setSidebarOpen(false);
+      }, 200);
+      setHoverTimeout(timeout);
+    }
+  };
 
   const navigationGroups = [
     {
@@ -118,29 +150,15 @@ const Layout = ({ children, user, onLogout, onNavigate, currentPage }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 flex overflow-hidden">
       <aside 
+        ref={sidebarRef}
         className={`${sidebarOpen ? 'w-56' : 'w-18'} bg-white/80 backdrop-blur-lg border-r border-slate-200 transition-all duration-300 ease-in-out flex flex-col h-screen fixed left-0 top-0 z-30 shadow-xl`}
         style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(249,250,251,0.95) 100%)' }}
-        onMouseEnter={() => {
-          if (hoverTimeout) {
-            clearTimeout(hoverTimeout);
-            setHoverTimeout(null);
-          }
-          if (!sidebarOpen) {
-            setSidebarOpen(true);
-          }
-        }}
-        onMouseLeave={() => {
-          if (sidebarOpen) {
-            const timeout = setTimeout(() => {
-              setSidebarOpen(false);
-            }, 200);
-            setHoverTimeout(timeout);
-          }
-        }}
+        onMouseEnter={handleSidebarMouseEnter}
+        onMouseLeave={handleSidebarMouseLeave}
       >
-        <div className="p-4 flex items-center justify-center border-b border-slate-200 flex-shrink-0 h-16">
+        <div className="p-4 flex items-center justify-between border-b border-slate-200 flex-shrink-0 h-16">
           {sidebarOpen && (
-            <div className="flex items-center space-x-2.5">
+            <div className="flex items-center space-x-2.5 flex-1">
               <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-md">
                 <span className="text-white font-bold text-xs">E</span>
               </div>
@@ -154,6 +172,17 @@ const Layout = ({ children, user, onLogout, onNavigate, currentPage }) => {
               <span className="text-white font-bold text-xs">E</span>
             </div>
           )}
+          <button
+            onClick={toggleSidebar}
+            className={`${sidebarOpen ? 'ml-2' : 'mx-auto'} p-1.5 rounded-lg hover:bg-blue-50 text-slate-600 hover:text-blue-600 transition-colors`}
+            aria-label="Toggle sidebar"
+          >
+            {sidebarOpen ? (
+              <FiX className="w-4 h-4" />
+            ) : (
+              <FiMenu className="w-4 h-4" />
+            )}
+          </button>
         </div>
 
         <nav className="flex-1 overflow-y-auto py-3 px-2">
@@ -166,20 +195,28 @@ const Layout = ({ children, user, onLogout, onNavigate, currentPage }) => {
                   return (
                     <li key={item.path}>
                       <button
-                        onClick={() => handleNavigation(item.path)}
-                        className={`w-full flex items-center transition-all duration-200 ${
-                          sidebarOpen 
-                            ? `space-x-3 px-3 py-2.5 rounded-lg ${
-                                active 
-                                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md' 
-                                  : 'text-slate-700 hover:bg-blue-50 hover:text-slate-900'
-                              }`
-                            : `justify-center px-2 py-2.5 rounded-lg ${
-                                active 
-                                  ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md' 
-                                  : 'text-slate-700 hover:bg-blue-50 hover:text-slate-900'
-                              }`
-                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleNavigation(item.path);
+                          if (!sidebarOpen) {
+                            setIsManuallyToggled(false);
+                          }
+                        }}
+                        className={(() => {
+                          const baseClasses = 'w-full flex items-center transition-all duration-200';
+                          if (sidebarOpen) {
+                            const sidebarClasses = 'space-x-3 px-3 py-2.5 rounded-lg';
+                            const activeClasses = active 
+                              ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md' 
+                              : 'text-slate-700 hover:bg-blue-50 hover:text-slate-900';
+                            return `${baseClasses} ${sidebarClasses} ${activeClasses}`;
+                          }
+                          const collapsedClasses = 'justify-center px-2 py-2.5 rounded-lg';
+                          const activeClasses = active 
+                            ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md' 
+                            : 'text-slate-700 hover:bg-blue-50 hover:text-slate-900';
+                          return `${baseClasses} ${collapsedClasses} ${activeClasses}`;
+                        })()}
                       >
                         <IconComponent className={`w-4 h-4 flex-shrink-0 ${active ? 'text-white' : 'text-blue-600'}`} />
                         {sidebarOpen && (
@@ -200,6 +237,13 @@ const Layout = ({ children, user, onLogout, onNavigate, currentPage }) => {
         <header className="bg-white/90 backdrop-blur-lg flex-shrink-0 h-16 border-b border-slate-200 w-full fixed top-0 left-0 z-40 shadow-md">
           <div className="px-5 py-3 flex items-center justify-between h-full">
             <div className="flex items-center space-x-3">
+              <button
+                onClick={toggleSidebar}
+                className="p-2 rounded-lg hover:bg-blue-50 text-slate-600 hover:text-blue-600 transition-colors"
+                aria-label="Toggle sidebar"
+              >
+                <FiMenu className="w-5 h-5" />
+              </button>
               <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm">
                 <span className="text-white font-bold text-[10px]">E</span>
               </div>

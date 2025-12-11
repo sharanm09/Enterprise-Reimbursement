@@ -166,13 +166,13 @@ const CreateReimbursement = ({ user }) => {
       }));
 
       // Append item-specific attachments
-      validItems.forEach((item, itemIndex) => {
+      for (const [itemIndex, item] of validItems.entries()) {
         if (item.attachments && item.attachments.length > 0) {
-          item.attachments.forEach((file) => {
+          for (const file of item.attachments) {
             formDataToSend.append(`item_${itemIndex}_attachments`, file);
-          });
+          }
         }
-      });
+      }
 
       const response = await axios.post(
         `${apiUrl}/reimbursements`,
@@ -203,8 +203,9 @@ const CreateReimbursement = ({ user }) => {
         return (
           <>
             <div>
-              <label className="text-xs font-medium text-gray-700 mb-0.5 block">Meal Type</label>
+              <label htmlFor={`meal_type_${index}`} className="text-xs font-medium text-gray-700 mb-0.5 block">Meal Type</label>
               <select
+                id={`meal_type_${index}`}
                 value={items[index]?.meal_type || ''}
                 onChange={(e) => updateItem(index, 'meal_type', e.target.value)}
                 className="w-full text-xs border border-gray-300 rounded px-2 py-1 text-gray-600"
@@ -217,8 +218,9 @@ const CreateReimbursement = ({ user }) => {
               </select>
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-700 mb-0.5 block">People Count</label>
+              <label htmlFor={`people_count_food_${index}`} className="text-xs font-medium text-gray-700 mb-0.5 block">People Count</label>
               <input
+                id={`people_count_food_${index}`}
                 type="number"
                 min="1"
                 value={items[index]?.people_count || ''}
@@ -233,8 +235,9 @@ const CreateReimbursement = ({ user }) => {
         return (
           <>
             <div>
-              <label className="text-xs font-medium text-gray-700 mb-0.5 block">Travel Purpose</label>
+              <label htmlFor={`travel_purpose_${index}`} className="text-xs font-medium text-gray-700 mb-0.5 block">Travel Purpose</label>
               <input
+                id={`travel_purpose_${index}`}
                 type="text"
                 value={items[index]?.travel_purpose || ''}
                 onChange={(e) => updateItem(index, 'travel_purpose', e.target.value)}
@@ -243,8 +246,9 @@ const CreateReimbursement = ({ user }) => {
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-700 mb-0.5 block">Number of People</label>
+              <label htmlFor={`people_count_accommodation_${index}`} className="text-xs font-medium text-gray-700 mb-0.5 block">Number of People</label>
               <input
+                id={`people_count_accommodation_${index}`}
                 type="number"
                 min="1"
                 value={items[index]?.people_count || ''}
@@ -259,8 +263,9 @@ const CreateReimbursement = ({ user }) => {
         return (
           <>
             <div>
-              <label className="text-xs font-medium text-gray-700 mb-0.5 block">Lodging City</label>
+              <label htmlFor={`lodging_city_${index}`} className="text-xs font-medium text-gray-700 mb-0.5 block">Lodging City</label>
               <input
+                id={`lodging_city_${index}`}
                 type="text"
                 value={items[index]?.lodging_city || ''}
                 onChange={(e) => updateItem(index, 'lodging_city', e.target.value)}
@@ -297,8 +302,9 @@ const CreateReimbursement = ({ user }) => {
         <h2 className="text-xs font-semibold text-gray-800 mb-3">Basic Information</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label className="text-xs font-medium text-gray-700 mb-0.5 block">Department *</label>
+            <label htmlFor="department_id" className="text-xs font-medium text-gray-700 mb-0.5 block">Department *</label>
             <select
+              id="department_id"
               value={formData.department_id}
               onChange={(e) => setFormData({ ...formData, department_id: e.target.value, cost_center_id: '' })}
               className="w-full text-xs border border-gray-300 rounded px-2 py-1 text-gray-600"
@@ -312,8 +318,9 @@ const CreateReimbursement = ({ user }) => {
           </div>
 
           <div>
-            <label className="text-xs font-medium text-gray-700 mb-0.5 block">Cost Center *</label>
+            <label htmlFor="cost_center_id" className="text-xs font-medium text-gray-700 mb-0.5 block">Cost Center *</label>
             <select
+              id="cost_center_id"
               value={formData.cost_center_id}
               onChange={(e) => setFormData({ ...formData, cost_center_id: e.target.value })}
               className="w-full text-xs border border-gray-300 rounded px-2 py-1 text-gray-600"
@@ -328,8 +335,9 @@ const CreateReimbursement = ({ user }) => {
           </div>
 
           <div>
-            <label className="text-xs font-medium text-gray-700 mb-0.5 block">Project (Optional)</label>
+            <label htmlFor="project_id" className="text-xs font-medium text-gray-700 mb-0.5 block">Project (Optional)</label>
             <select
+              id="project_id"
               value={formData.project_id}
               onChange={(e) => setFormData({ ...formData, project_id: e.target.value })}
               className="w-full text-xs border border-gray-300 rounded px-2 py-1 text-gray-600"
@@ -342,8 +350,9 @@ const CreateReimbursement = ({ user }) => {
           </div>
 
           <div>
-            <label className="text-xs font-medium text-gray-700 mb-0.5 block">Description</label>
+            <label htmlFor="description" className="text-xs font-medium text-gray-700 mb-0.5 block">Description</label>
             <textarea
+              id="description"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="w-full text-xs border border-gray-300 rounded px-2 py-1 text-gray-600"
@@ -367,7 +376,7 @@ const CreateReimbursement = ({ user }) => {
         </div>
 
         {items.map((item, index) => (
-          <div key={index} className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+          <div key={`item-${index}-${item.expense_type || 'new'}`} className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold text-gray-700">Item {index + 1}</span>
               {items.length > 1 && (
@@ -382,8 +391,9 @@ const CreateReimbursement = ({ user }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium text-gray-700 mb-0.5 block">Expense Category</label>
+                <label htmlFor={`expense_category_id_${index}`} className="text-xs font-medium text-gray-700 mb-0.5 block">Expense Category</label>
                 <select
+                  id={`expense_category_id_${index}`}
                   value={item.expense_category_id}
                   onChange={(e) => updateItem(index, 'expense_category_id', e.target.value)}
                   className="w-full text-xs border border-gray-300 rounded px-2 py-1 text-gray-600"
@@ -396,8 +406,9 @@ const CreateReimbursement = ({ user }) => {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-gray-700 mb-0.5 block">Expense Type *</label>
+                <label htmlFor={`expense_type_${index}`} className="text-xs font-medium text-gray-700 mb-0.5 block">Expense Type *</label>
                 <select
+                  id={`expense_type_${index}`}
                   value={item.expense_type}
                   onChange={(e) => updateItem(index, 'expense_type', e.target.value)}
                   className="w-full text-xs border border-gray-300 rounded px-2 py-1 text-gray-600"
@@ -413,8 +424,9 @@ const CreateReimbursement = ({ user }) => {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-gray-700 mb-0.5 block">Amount *</label>
+                <label htmlFor={`amount_${index}`} className="text-xs font-medium text-gray-700 mb-0.5 block">Amount *</label>
                 <input
+                  id={`amount_${index}`}
                   type="number"
                   step="0.01"
                   min="0"
@@ -427,8 +439,9 @@ const CreateReimbursement = ({ user }) => {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-gray-700 mb-0.5 block">Expense Date *</label>
+                <label htmlFor={`expense_date_${index}`} className="text-xs font-medium text-gray-700 mb-0.5 block">Expense Date *</label>
                 <input
+                  id={`expense_date_${index}`}
                   type="date"
                   value={item.expense_date}
                   onChange={(e) => updateItem(index, 'expense_date', e.target.value)}
@@ -438,8 +451,9 @@ const CreateReimbursement = ({ user }) => {
               </div>
 
               <div className="md:col-span-2">
-                <label className="text-xs font-medium text-gray-700 mb-0.5 block">Description</label>
+                <label htmlFor={`item_description_${index}`} className="text-xs font-medium text-gray-700 mb-0.5 block">Description</label>
                 <textarea
+                  id={`item_description_${index}`}
                   value={item.description}
                   onChange={(e) => updateItem(index, 'description', e.target.value)}
                   className="w-full text-xs border border-gray-300 rounded px-2 py-1 text-gray-600"
@@ -456,14 +470,15 @@ const CreateReimbursement = ({ user }) => {
 
               {/* Item-specific file upload */}
               <div className="md:col-span-2">
-                <label className="text-xs font-medium text-gray-700 mb-1 block">Attachments (Receipts/Documents)</label>
-                <label className="flex items-center justify-center w-full px-3 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition-colors">
+                <label htmlFor={`file_upload_${index}`} className="text-xs font-medium text-gray-700 mb-1 block">Attachments (Receipts/Documents)</label>
+                <label htmlFor={`file_upload_${index}`} className="flex items-center justify-center w-full px-3 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition-colors">
                   <div className="flex flex-col items-center">
                     <FiUpload className="w-3.5 h-3.5 text-gray-600 mb-1" />
                     <span className="text-xs text-gray-600 font-medium">Click to upload files</span>
                     <span className="text-xs text-gray-500">PDF, Images (Max 10MB per file)</span>
                   </div>
                   <input
+                    id={`file_upload_${index}`}
                     type="file"
                     multiple
                     onChange={(e) => handleItemFileChange(index, e)}
@@ -475,7 +490,7 @@ const CreateReimbursement = ({ user }) => {
                 {item.attachments && item.attachments.length > 0 && (
                   <div className="space-y-1.5 mt-2">
                     {item.attachments.map((file, fileIndex) => (
-                      <div key={fileIndex} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-200">
+                      <div key={`file-${fileIndex}-${file.name}`} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-200">
                         <div className="flex items-center space-x-2 flex-1 min-w-0">
                           <div className="flex-shrink-0">
                             <FiUpload className="w-3 h-3 text-gray-600" />

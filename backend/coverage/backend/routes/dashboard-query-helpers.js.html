@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/13</span>
+                <span class='fraction'>13/13</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">91.66% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/12</span>
+                <span class='fraction'>11/12</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/4</span>
+                <span class='fraction'>4/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/11</span>
+                <span class='fraction'>11/11</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -97,67 +97,67 @@
 <a name='L32'></a><a href='#L32'>32</a>
 <a name='L33'></a><a href='#L33'>33</a>
 <a name='L34'></a><a href='#L34'>34</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">11x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// Helper functions to reduce duplicate query patterns in dashboard-helpers.js
-const { pool } = <span class="cstat-no" title="statement not covered" >require('../config/database');</span>
-const logger = <span class="cstat-no" title="statement not covered" >require('../utils/logger');</span>
+const { pool } = require('../config/database');
+const logger = require('../utils/logger');
 &nbsp;
-async function <span class="fstat-no" title="function not covered" >executeStatsQuery(</span>query, params, defaultValue = <span class="branch-0 cbranch-no" title="branch not covered" >null)</span> {
-  const defaultVal = <span class="cstat-no" title="statement not covered" >defaultValue || { count: '0', total: '0' };</span>
-  const result = <span class="cstat-no" title="statement not covered" >await pool.query(query, params).catch(<span class="fstat-no" title="function not covered" >()</span> =&gt; (<span class="cstat-no" title="statement not covered" >{ rows: [defaultVal] })</span>);</span>
-<span class="cstat-no" title="statement not covered" >  return {</span>
+async function executeStatsQuery(query, params, defaultValue = null) {
+  const defaultVal = defaultValue || { count: '0', total: '0' };
+  const result = await pool.query(query, params).catch(() =&gt; ({ rows: [defaultVal] }));
+  return {
     count: Number.parseInt(result.rows[0]?.count, 10) || 0,
     amount: Number.parseFloat(result.rows[0]?.total) || 0
   };
 }
 &nbsp;
-async function <span class="fstat-no" title="function not covered" >getApprovedStatsByStatus(</span>statuses, usePaidAmount = <span class="branch-0 cbranch-no" title="branch not covered" >false)</span> {
-  const amountField = <span class="cstat-no" title="statement not covered" >usePaidAmount ? 'COALESCE(ri.paid_amount, ri.amount)' : 'ri.amount';</span>
-  const statusList = <span class="cstat-no" title="statement not covered" >Array.isArray(statuses) ? statuses : [statuses];</span>
-  const statusCondition = <span class="cstat-no" title="statement not covered" >statusList.map(<span class="fstat-no" title="function not covered" >(_</span>, i) =&gt; <span class="cstat-no" title="statement not covered" >`$${i + 1}`)</span>.join(', ');</span>
+async function getApprovedStatsByStatus(statuses, usePaidAmount = <span class="branch-0 cbranch-no" title="branch not covered" >false)</span> {
+  const amountField = usePaidAmount ? 'COALESCE(ri.paid_amount, ri.amount)' : 'ri.amount';
+  const statusList = Array.isArray(statuses) ? statuses : [statuses];
+  const statusCondition = statusList.map((_, i) =&gt; `$${i + 1}`).join(', ');
   
-  const query = <span class="cstat-no" title="statement not covered" >`</span>
+  const query = `
     SELECT COUNT(*) as count, COALESCE(SUM(${amountField}), 0) as total
     FROM reimbursement_items ri
     INNER JOIN reimbursements r ON ri.reimbursement_id = r.id
     WHERE ri.status IN (${statusCondition})
   `;
   
-<span class="cstat-no" title="statement not covered" >  return executeStatsQuery(query, statusList);</span>
+  return executeStatsQuery(query, statusList);
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >module.exports = {</span>
+module.exports = {
   executeStatsQuery,
   getApprovedStatsByStatus
 };
@@ -169,7 +169,7 @@ async function <span class="fstat-no" title="function not covered" >getApprovedS
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-10T08:29:33.436Z
+                at 2025-12-11T09:27:50.862Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

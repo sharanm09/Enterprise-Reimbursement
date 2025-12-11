@@ -208,31 +208,39 @@ class User {
     return this;
   }
 
+  validateRequiredFields() {
+    if (!this.azureId) {
+      throw new Error('azureId is required but was not provided');
+    }
+    if (!this.displayName) {
+      throw new Error('displayName is required but was not provided');
+    }
+    if (!this.email) {
+      throw new Error('email is required but was not provided');
+    }
+  }
+
+  async createNewUser() {
+    const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'admin@qwikhire.ai';
+    const isSuperAdmin = this.email.toLowerCase() === superAdminEmail.toLowerCase();
+    
+    const roleId = await this.assignRole(isSuperAdmin);
+    const roleResult = await pool.query('SELECT name FROM roles WHERE id = $1', [roleId]);
+    const roleName = roleResult.rows[0]?.name;
+    const managerId = await this.assignManager(roleName);
+    
+    return await this.createUser(roleId, managerId, roleName);
+  }
+
   async save() {
     try {
-      if (!this.azureId) {
-        throw new Error('azureId is required but was not provided');
-      }
-      if (!this.displayName) {
-        throw new Error('displayName is required but was not provided');
-      }
-      if (!this.email) {
-        throw new Error('email is required but was not provided');
-      }
+      this.validateRequiredFields();
 
       if (this.id) {
         return await this.updateUser();
       }
 
-      const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'admin@qwikhire.ai';
-      const isSuperAdmin = this.email.toLowerCase() === superAdminEmail.toLowerCase();
-      
-      const roleId = await this.assignRole(isSuperAdmin);
-      const roleResult = await pool.query('SELECT name FROM roles WHERE id = $1', [roleId]);
-      const roleName = roleResult.rows[0]?.name;
-      const managerId = await this.assignManager(roleName);
-      
-      return await this.createUser(roleId, managerId, roleName);
+      return await this.createNewUser();
     } catch (error) {
       logger.error('Error saving user:', error);
       throw error;

@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/10</span>
+                <span class='fraction'>10/10</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/8</span>
+                <span class='fraction'>8/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/3</span>
+                <span class='fraction'>3/3</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/10</span>
+                <span class='fraction'>10/10</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -102,74 +102,74 @@
 <a name='L37'></a><a href='#L37'>37</a>
 <a name='L38'></a><a href='#L38'>38</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">16x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">16x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">16x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">16x</span>
+<span class="cline-any cline-yes">23x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">16x</span>
+<span class="cline-any cline-yes">23x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">16x</span>
+<span class="cline-any cline-yes">16x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// Helper functions for finance approval logic to reduce duplication
-async function <span class="fstat-no" title="function not covered" >processFinanceApproval(</span>client, itemId, approverId, comments, reimbursementId) {
-<span class="cstat-no" title="statement not covered" >  await client.query(`</span>
+async function processFinanceApproval(client, itemId, approverId, comments, reimbursementId) {
+  await client.query(`
     UPDATE reimbursement_items
     SET status = 'approved_by_finance', updated_at = CURRENT_TIMESTAMP
     WHERE id = $1
   `, [itemId]);
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  await client.query(`</span>
+  await client.query(`
     INSERT INTO reimbursement_approvals (reimbursement_item_id, approver_id, approval_level, status, comments)
     VALUES ($1, $2, $3, $4, $5)
   `, [itemId, approverId, 'finance', 'approved', comments || null]);
 &nbsp;
-  const allItemsResult = <span class="cstat-no" title="statement not covered" >await client.query(`</span>
+  const allItemsResult = await client.query(`
     SELECT status FROM reimbursement_items WHERE reimbursement_id = $1
   `, [reimbursementId]);
 &nbsp;
-  const allApproved = <span class="cstat-no" title="statement not covered" >allItemsResult.rows.every(<span class="fstat-no" title="function not covered" >it</span>emRow =&gt; </span>
-<span class="cstat-no" title="statement not covered" >    itemRow.status === 'approved_by_finance' || itemRow.status === 'paid'</span>
+  const allApproved = allItemsResult.rows.every(itemRow =&gt; 
+    itemRow.status === 'approved_by_finance' || itemRow.status === 'paid'
   );
-  const hasRejected = <span class="cstat-no" title="statement not covered" >allItemsResult.rows.some(<span class="fstat-no" title="function not covered" >it</span>emRow =&gt; </span>
-<span class="cstat-no" title="statement not covered" >    itemRow.status?.includes('rejected')</span>
+  const hasRejected = allItemsResult.rows.some(itemRow =&gt; 
+    itemRow.status?.includes('rejected')
   );
 &nbsp;
-  const reimbursementStatus = <span class="cstat-no" title="statement not covered" >(allApproved &amp;&amp; !hasRejected) ? 'fully_approved' : 'partially_approved';</span>
-<span class="cstat-no" title="statement not covered" >  await client.query(`</span>
+  const reimbursementStatus = (allApproved &amp;&amp; !hasRejected) ? 'fully_approved' : 'partially_approved';
+  await client.query(`
     UPDATE reimbursements
     SET status = $1, updated_at = CURRENT_TIMESTAMP
     WHERE id = $2
   `, [reimbursementStatus, reimbursementId]);
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >module.exports = {</span>
+module.exports = {
   processFinanceApproval
 };
 &nbsp;
@@ -181,7 +181,7 @@ async function <span class="fstat-no" title="function not covered" >processFinan
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-10T08:29:33.436Z
+                at 2025-12-11T09:27:50.862Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

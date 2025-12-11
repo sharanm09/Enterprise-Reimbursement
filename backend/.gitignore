@@ -1,4 +1,4 @@
 node_modules/
-# .env (commented out to allow .env files in repo)
+.env
 *.log
 

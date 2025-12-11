@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/16</span>
+                <span class='fraction'>16/16</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/2</span>
+                <span class='fraction'>2/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/16</span>
+                <span class='fraction'>16/16</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -94,61 +94,61 @@
 <a name='L29'></a><a href='#L29'>29</a>
 <a name='L30'></a><a href='#L30'>30</a>
 <a name='L31'></a><a href='#L31'>31</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// Helper function for superadmin approval endpoints to reduce duplication
-const { pool } = <span class="cstat-no" title="statement not covered" >require('../config/database');</span>
-const { buildSuperAdminQuery } = <span class="cstat-no" title="statement not covered" >require('./approvals-query-helpers');</span>
-const { enrichItemsWithApprovalsAndAttachments } = <span class="cstat-no" title="statement not covered" >require('./approvals-enrichment-helpers');</span>
-const logger = <span class="cstat-no" title="statement not covered" >require('../utils/logger');</span>
+const { pool } = require('../config/database');
+const { buildSuperAdminQuery } = require('./approvals-query-helpers');
+const { enrichItemsWithApprovalsAndAttachments } = require('./approvals-enrichment-helpers');
+const logger = require('../utils/logger');
 &nbsp;
-async function <span class="fstat-no" title="function not covered" >handleSuperAdminApprovalRequest(</span>req, res, approvalLevel) {
-<span class="cstat-no" title="statement not covered" >  try {</span>
-    const { status } = <span class="cstat-no" title="statement not covered" >req.params;</span>
-    const validStatuses = <span class="cstat-no" title="statement not covered" >['pending', 'approved', 'rejected'];</span>
-<span class="cstat-no" title="statement not covered" >    if (!validStatuses.includes(status)) {</span>
-<span class="cstat-no" title="statement not covered" >      return res.status(400).json({ success: false, message: 'Invalid status. Use: pending, approved, or rejected' });</span>
+async function handleSuperAdminApprovalRequest(req, res, approvalLevel) {
+  try {
+    const { status } = req.params;
+    const validStatuses = ['pending', 'approved', 'rejected'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid status. Use: pending, approved, or rejected' });
     }
     
-    const { query, params } = <span class="cstat-no" title="statement not covered" >buildSuperAdminQuery(status, approvalLevel);</span>
-    const result = <span class="cstat-no" title="statement not covered" >await pool.query(query, params);</span>
-    const itemsWithApprovals = <span class="cstat-no" title="statement not covered" >await enrichItemsWithApprovalsAndAttachments(result.rows, approvalLevel);</span>
+    const { query, params } = buildSuperAdminQuery(status, approvalLevel);
+    const result = await pool.query(query, params);
+    const itemsWithApprovals = await enrichItemsWithApprovalsAndAttachments(result.rows, approvalLevel);
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    res.json({ success: true, data: itemsWithApprovals });</span>
+    res.json({ success: true, data: itemsWithApprovals });
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    logger.error(`Error fetching superadmin ${approvalLevel} ${req.params.status} approvals:`, error);</span>
-<span class="cstat-no" title="statement not covered" >    res.status(500).json({ success: false, message: `Failed to fetch ${req.params.status} approvals`, error: error.message });</span>
+    logger.error(`Error fetching superadmin ${approvalLevel} ${req.params.status} approvals:`, error);
+    res.status(500).json({ success: false, message: `Failed to fetch ${req.params.status} approvals`, error: error.message });
   }
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >module.exports = {</span>
+module.exports = {
   handleSuperAdminApprovalRequest
 };
 &nbsp;
@@ -160,7 +160,7 @@ async function <span class="fstat-no" title="function not covered" >handleSuperA
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-10T08:29:33.436Z
+                at 2025-12-11T09:27:50.862Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

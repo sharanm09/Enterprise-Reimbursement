@@ -16,8 +16,6 @@ node_modules/
 .env.development.local
 .env.test.local
 .env.production.local
-**/.env
-**/.env.local
 
 # Logs
 npm-debug.log*
@@ -38,8 +36,4 @@ Thumbs.db
 
 # MongoDB
 *.log
-
-# SonarQube temporary files (included per user request)
-# .scannerwork/
-# **/.scannerwork/
 
