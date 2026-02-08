@@ -1,0 +1,6 @@
+projectKey=enterprise-reimbursement-frontend
+serverUrl=http://192.168.0.127:9000
+serverVersion=25.10.0.114319
+dashboardUrl=http://192.168.0.127:9000/dashboard?id=enterprise-reimbursement-frontend
+ceTaskId=fa95e511-dc5a-4899-ad35-eecf3fd4189d
+ceTaskUrl=http://192.168.0.127:9000/api/ce/task?id=fa95e511-dc5a-4899-ad35-eecf3fd4189d

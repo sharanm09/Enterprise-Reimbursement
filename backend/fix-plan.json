@@ -1,0 +1,30 @@
+{
+  "backend": {
+    "config/database.js": [
+      "Fix cognitive complexity by extracting helper functions",
+      "Use Set instead of array for columnNames",
+      "Fix string concatenation in SQL queries"
+    ],
+    "models/User.js": [
+      "Refactor function to reduce cognitive complexity from 30 to 15",
+      "Fix redundant assignment"
+    ],
+    "routes/approvals.js": [
+      "Use optional chain expressions",
+      "Remove useless assignments",
+      "Remove unused variables"
+    ],
+    "routes/auth.js": [
+      "Fix negated conditions"
+    ],
+    "routes/dashboard.js": [
+      "Refactor to reduce cognitive complexity from 43 to 15",
+      "Remove useless assignments",
+      "Fix string concatenation issues"
+    ],
+    "routes/reimbursements.js": [
+      "Refactor to reduce cognitive complexity from 58 to 15",
+      "Fix parseFloat issues"
+    ]
+  }
+}
