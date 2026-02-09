@@ -2,14 +2,14 @@
   <rect width="400" height="100" fill="transparent"/>
   <!-- Symbol -->
   <g transform="translate(20, 10) scale(0.8)">
-    <circle cx="40" cy="50" r="35" fill="none" stroke="white" stroke-width="4" />
-    <path d="M20,30 Q40,50 20,70" fill="none" stroke="white" stroke-width="4" />
-    <path d="M60,30 Q40,50 60,70" fill="none" stroke="white" stroke-width="4" />
+    <circle cx="40" cy="50" r="35" fill="none" stroke="#1e293b" stroke-width="4" />
+    <path d="M20,30 Q40,50 20,70" fill="none" stroke="#1e293b" stroke-width="4" />
+    <path d="M60,30 Q40,50 60,70" fill="none" stroke="#1e293b" stroke-width="4" />
     <circle cx="50" cy="50" r="28" fill="#0099CC" />
-    <line x1="15" y1="50" x2="65" y2="50" stroke="white" stroke-width="2" />
-    <circle cx="65" cy="50" r="3" fill="white" />
+    <line x1="15" y1="50" x2="65" y2="50" stroke="#1e293b" stroke-width="2" />
+    <circle cx="65" cy="50" r="3" fill="#1e293b" />
   </g>
   <!-- Text -->
-  <text x="100" y="55" font-family="Arial, sans-serif" font-weight="bold" font-size="44" fill="white">XDLINX</text>
-  <text x="105" y="85" font-family="Arial, sans-serif" font-weight="normal" font-size="16" fill="white" letter-spacing="6">SPACE LABS</text>
+  <text x="100" y="55" font-family="Arial, sans-serif" font-weight="bold" font-size="44" fill="#1e293b">XDLINX</text>
+  <text x="105" y="85" font-family="Arial, sans-serif" font-weight="normal" font-size="16" fill="#1e293b" letter-spacing="6">SPACE LABS</text>
 </svg>

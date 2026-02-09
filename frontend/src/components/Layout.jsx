@@ -240,7 +240,7 @@ const Layout = ({ children, user, onLogout, onNavigate, currentPage }) => {
               >
                 <FiMenu className="w-5 h-5" />
               </button>
-              <img src={logo} alt="XDLINX SPACE LABS" className="h-10 object-contain bg-black px-2 rounded" />
+              <img src={logo} alt="XDLINX SPACE LABS" className="h-10 object-contain" />
             </div>
 
             <div className="flex items-center space-x-3">

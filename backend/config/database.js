@@ -115,6 +115,9 @@ async function createUsersTable(idColumnDef, fkType) {
       const alterQuery = 'ALTER TABLE users ADD COLUMN department_id ' + safeFkType + ' REFERENCES departments(id) DEFAULT NULL';
       await pool.query(alterQuery);
     }
+    if (!columnNames.has('bank_account_no')) {
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS bank_account_no VARCHAR(50)');
+    }
   } else {
     // Use string concatenation with validated values to avoid SQL injection
     const query = 'CREATE TABLE users (' +
@@ -127,7 +130,9 @@ async function createUsersTable(idColumnDef, fkType) {
       'family_name VARCHAR(255), ' +
       'role_id ' + safeFkType + ' REFERENCES roles(id), ' +
       'department_id ' + safeFkType + ' REFERENCES departments(id), ' +
+      'department_id ' + safeFkType + ' REFERENCES departments(id), ' +
       'manager_id ' + safeFkType + ' REFERENCES users(id), ' +
+      'bank_account_no VARCHAR(50), ' +
       'last_login TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ' +
       'created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ' +
       'updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP' +

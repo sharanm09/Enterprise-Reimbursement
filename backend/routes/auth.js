@@ -3,6 +3,7 @@ const passport = require('passport');
 const OIDCStrategy = require('passport-azure-ad').OIDCStrategy;
 const jwt = require('jsonwebtoken');
 const jwksClient = require('jwks-rsa');
+const crypto = require('crypto');
 const User = require('../models/User');
 const Role = require('../models/Role');
 const azureConfig = require('../config/azureConfig');
@@ -393,12 +394,114 @@ router.get('/users', isSuperAdmin, async (req, res) => {
         roleId: row.role_id,
         managerId: row.manager_id,
         managerName: row.manager_name,
-        managerEmail: row.manager_email
+        managerEmail: row.manager_email,
+        bankAccountNo: row.bank_account_no
       }))
     });
   } catch (error) {
     logger.error('Error fetching users:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch users' });
+  }
+});
+
+router.post('/users', isSuperAdmin, async (req, res) => {
+  try {
+    const { displayName, email, roleId, managerId, bankAccountNo } = req.body;
+
+    if (!displayName || !email || !roleId) {
+      return res.status(400).json({ success: false, message: 'Display Name, Email, and Role are required' });
+    }
+
+    // Check if user exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ success: false, message: 'User with this email already exists' });
+    }
+
+    const newUser = new User({
+      azureId: crypto.randomUUID(), // Generate a manual ID
+      displayName,
+      email,
+      roleId,
+      managerId: managerId || null,
+      bankAccountNo: bankAccountNo || null
+    });
+
+    const roleResult = await Role.findById(roleId);
+    const roleName = roleResult ? roleResult.name : null;
+
+    await newUser.createUser(roleId, managerId || null, roleName);
+
+    res.status(201).json({
+      success: true,
+      user: newUser.toJSON(),
+      message: 'User created successfully'
+    });
+  } catch (error) {
+    logger.error('Error creating user:', error);
+    res.status(500).json({ success: false, message: 'Failed to create user', error: error.message });
+  }
+});
+
+router.put('/users/:id', isSuperAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { displayName, email, bankAccountNo } = req.body;
+
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'User ID is required' });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Update fields
+    if (displayName) user.displayName = displayName;
+    if (email) user.email = email;
+    if (bankAccountNo !== undefined) user.bankAccountNo = bankAccountNo;
+
+    await user.updateUser();
+
+    res.json({
+      success: true,
+      user: user.toJSON(),
+      message: 'User updated successfully'
+    });
+  } catch (error) {
+    logger.error('Error updating user:', error);
+    res.status(500).json({ success: false, message: 'Failed to update user', error: error.message });
+  }
+});
+
+router.delete('/users/:id', isSuperAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'User ID is required' });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Prevent deleting self
+    if (req.user.id === id) {
+      return res.status(400).json({ success: false, message: 'You cannot delete your own account' });
+    }
+
+    await pool.query('DELETE FROM users WHERE id = $1', [id]);
+
+    res.json({
+      success: true,
+      message: 'User deleted successfully'
+    });
+  } catch (error) {
+    logger.error('Error deleting user:', error);
+    res.status(500).json({ success: false, message: 'Failed to delete user', error: error.message });
   }
 });
 

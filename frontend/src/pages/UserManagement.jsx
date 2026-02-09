@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import logger from '../utils/logger';
-import { FiUsers, FiMail } from 'react-icons/fi';
+import { FiUsers, FiMail, FiPlus, FiX, FiEdit2, FiTrash2 } from 'react-icons/fi';
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -13,7 +13,104 @@ const UserManagement = () => {
     fetchUsers();
     fetchRoles();
     fetchManagers();
+    fetchManagers();
   }, []);
+
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [newUser, setNewUser] = useState({
+    displayName: '',
+    email: '',
+    roleId: '',
+    managerId: '',
+    bankAccountNo: ''
+  });
+
+  const [editingUser, setEditingUser] = useState(null);
+
+  const handleSaveUser = async (e) => {
+    e.preventDefault();
+    try {
+      const apiUrl = process.env.REACT_APP_API_URL;
+
+      if (editingUser) {
+        // Update existing user
+        const response = await axios.put(
+          `${apiUrl}/auth/users/${editingUser.id}`,
+          {
+            displayName: newUser.displayName,
+            email: newUser.email,
+            bankAccountNo: newUser.bankAccountNo
+          },
+          { withCredentials: true }
+        );
+
+        if (response.data.success) {
+          alert('User updated successfully');
+          setShowAddUserModal(false);
+          setEditingUser(null);
+          setNewUser({ displayName: '', email: '', roleId: '', managerId: '', bankAccountNo: '' });
+          fetchUsers();
+        }
+      } else {
+        // Create new user
+        const response = await axios.post(
+          `${apiUrl}/auth/users`,
+          newUser,
+          { withCredentials: true }
+        );
+        if (response.data.success) {
+          alert('User created successfully');
+          setShowAddUserModal(false);
+          setNewUser({ displayName: '', email: '', roleId: '', managerId: '', bankAccountNo: '' });
+          fetchUsers();
+        }
+      }
+    } catch (error) {
+      logger.error('Error saving user:', error);
+      alert(error.response?.data?.message || 'Failed to save user');
+    }
+  };
+
+  const handleCreateUser = handleSaveUser; // Keep compatibility if needed, but we used handleSaveUser in form
+
+  const handleDeleteUser = async (userId) => {
+    if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const apiUrl = process.env.REACT_APP_API_URL;
+      const response = await axios.delete(`${apiUrl}/auth/users/${userId}`, {
+        withCredentials: true
+      });
+
+      if (response.data.success) {
+        alert('User deleted successfully');
+        fetchUsers();
+      }
+    } catch (error) {
+      logger.error('Error deleting user:', error);
+      alert(error.response?.data?.message || 'Failed to delete user');
+    }
+  };
+
+  const openEditModal = (user) => {
+    setEditingUser(user);
+    setNewUser({
+      displayName: user.displayName,
+      email: user.email,
+      roleId: user.roleId || (user.role ? user.role.id : ''),
+      managerId: user.managerId || '',
+      bankAccountNo: user.bankAccountNo || ''
+    });
+    setShowAddUserModal(true);
+  };
+
+  const openAddModal = () => {
+    setEditingUser(null);
+    setNewUser({ displayName: '', email: '', roleId: '', managerId: '', bankAccountNo: '' });
+    setShowAddUserModal(true);
+  };
 
   const fetchUsers = async () => {
     try {
@@ -53,7 +150,7 @@ const UserManagement = () => {
       });
       if (response.data.success) {
         const managerRoles = ['manager', 'hr', 'superadmin'];
-        const managerUsers = response.data.users.filter(user => 
+        const managerUsers = response.data.users.filter(user =>
           user.role && managerRoles.includes(user.role.name.toLowerCase())
         );
         setManagers(managerUsers);
@@ -108,7 +205,7 @@ const UserManagement = () => {
 
   const getRoleStatusColor = (roleName) => {
     if (!roleName) return 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 border border-gray-300';
-    
+
     switch (roleName.toLowerCase()) {
       case 'superadmin':
         return 'bg-gradient-to-r from-slate-100 to-blue-100 text-slate-700 border border-slate-300';
@@ -132,6 +229,16 @@ const UserManagement = () => {
         <p className="text-xs text-slate-600 mt-1">Manage user roles and permissions</p>
       </div>
 
+      <div className="flex justify-end">
+        <button
+          onClick={openAddModal}
+          className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium shadow-sm"
+        >
+          <FiPlus className="w-3.5 h-3.5" />
+          <span>Add User</span>
+        </button>
+      </div>
+
       <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-indigo-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full">
@@ -143,12 +250,14 @@ const UserManagement = () => {
                 <th className="text-left py-1.5 px-2 text-[9px] font-medium text-gray-500 uppercase tracking-wide">Change Role</th>
                 <th className="text-left py-1.5 px-2 text-[9px] font-medium text-gray-500 uppercase tracking-wide">Manager</th>
                 <th className="text-left py-1.5 px-2 text-[9px] font-medium text-gray-500 uppercase tracking-wide">Change Manager</th>
+                <th className="text-left py-1.5 px-2 text-[9px] font-medium text-gray-500 uppercase tracking-wide">Bank A/C No</th>
+                <th className="text-left py-1.5 px-2 text-[9px] font-medium text-gray-500 uppercase tracking-wide">Actions</th>
               </tr>
             </thead>
             <tbody>
               {users.map((user) => (
-                <tr 
-                  key={user.id} 
+                <tr
+                  key={user.id}
                   className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                 >
                   <td className="py-1.5 px-2 whitespace-nowrap">
@@ -206,12 +315,139 @@ const UserManagement = () => {
                       ))}
                     </select>
                   </td>
+                  <td className="py-1.5 px-2 whitespace-nowrap">
+                    <div className="text-[10px] text-gray-600">{user.bankAccountNo || '-'}</div>
+                  </td>
+                  <td className="py-1.5 px-2 whitespace-nowrap">
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => openEditModal(user)}
+                        className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                        title="Edit User"
+                      >
+                        <FiEdit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteUser(user.id)}
+                        className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                        title="Delete User"
+                      >
+                        <FiTrash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+
+      {/* Add User Modal */}
+      {
+        showAddUserModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+              <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="text-sm font-bold text-gray-900">{editingUser ? 'Edit User' : 'Add New User'}</h3>
+                <button
+                  onClick={() => setShowAddUserModal(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <FiX className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveUser} className="p-5 space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Display Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={newUser.displayName}
+                    onChange={(e) => setNewUser({ ...newUser, displayName: e.target.value })}
+                    className="w-full text-xs border border-gray-300 rounded-lg px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    placeholder="John Doe"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Email *</label>
+                  <input
+                    type="email"
+                    required
+                    value={newUser.email}
+                    onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                    className="w-full text-xs border border-gray-300 rounded-lg px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    placeholder="john@example.com"
+                  />
+                </div>
+
+                {!editingUser && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Role *</label>
+                    <select
+                      required
+                      value={newUser.roleId}
+                      onChange={(e) => setNewUser({ ...newUser, roleId: e.target.value })}
+                      className="w-full text-xs border border-gray-300 rounded-lg px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    >
+                      <option value="">Select Role</option>
+                      {roles.map(role => (
+                        <option key={role.id} value={role.id}>{role.displayName}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {!editingUser && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Manager</label>
+                    <select
+                      value={newUser.managerId}
+                      onChange={(e) => setNewUser({ ...newUser, managerId: e.target.value })}
+                      className="w-full text-xs border border-gray-300 rounded-lg px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    >
+                      <option value="">Select Manager</option>
+                      {managers.map(manager => (
+                        <option key={manager.id} value={manager.id}>{manager.displayName}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Bank Account No</label>
+                  <input
+                    type="text"
+                    value={newUser.bankAccountNo}
+                    onChange={(e) => setNewUser({ ...newUser, bankAccountNo: e.target.value })}
+                    className="w-full text-xs border border-gray-300 rounded-lg px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    placeholder="Enter Bank Account Number"
+                  />
+                </div>
+
+                <div className="pt-2 flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddUserModal(false)}
+                    className="px-3 py-2 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-3 py-2 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
+                  >
+                    {editingUser ? 'Update User' : 'Create User'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )
+      }
     </div>
   );
 };

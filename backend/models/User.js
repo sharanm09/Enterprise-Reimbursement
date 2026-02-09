@@ -11,6 +11,7 @@ class User {
     this.surname = data.surname || data.family_name;
     this.roleId = data.roleId || data.role_id;
     this.managerId = data.managerId || data.manager_id;
+    this.bankAccountNo = data.bankAccountNo || data.bank_account_no;
     this.lastLogin = data.lastLogin || data.last_login;
     this.createdAt = data.createdAt || data.created_at;
     this.updatedAt = data.updatedAt || data.updated_at;
@@ -28,6 +29,7 @@ class User {
       surname: this.surname,
       roleId: this.roleId,
       managerId: this.managerId,
+      bankAccountNo: this.bankAccountNo,
       lastLogin: this.lastLogin
     };
   }
@@ -134,10 +136,10 @@ class User {
   async updateUser() {
     const result = await pool.query(
       `UPDATE users 
-       SET display_name = $1, email = $2, given_name = $3, surname = $4, last_login = $5, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $6
+       SET display_name = $1, email = $2, given_name = $3, surname = $4, bank_account_no = $5, last_login = $6, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $7
        RETURNING *`,
-      [this.displayName, this.email, this.givenName, this.surname, this.lastLogin, this.id]
+      [this.displayName, this.email, this.givenName, this.surname, this.bankAccountNo, this.lastLogin, this.id]
     );
 
     if (result.rows.length > 0) {
@@ -182,8 +184,8 @@ class User {
     const surnameValue = this.surname || null;
 
     const result = await pool.query(
-      `INSERT INTO users (azure_id, display_name, email, given_name, surname, family_name, role_id, manager_id, last_login)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `INSERT INTO users (azure_id, display_name, email, given_name, surname, family_name, role_id, manager_id, bank_account_no, last_login)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
       [
         this.azureId,
@@ -194,6 +196,7 @@ class User {
         surnameValue,
         roleId,
         managerId,
+        this.bankAccountNo,
         this.lastLogin || new Date()
       ]
     );
