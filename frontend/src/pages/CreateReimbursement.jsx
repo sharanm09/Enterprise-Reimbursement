@@ -11,8 +11,8 @@ const CreateReimbursement = ({ user }) => {
   const [departments, setDepartments] = useState([]);
   const [costCenters, setCostCenters] = useState([]);
   const [projects, setProjects] = useState([]);
-  const [expenseCategories, setExpenseCategories] = useState([]);
-  
+  // const [expenseCategories, setExpenseCategories] = useState([]); // Removed as per request
+
   const [formData, setFormData] = useState({
     department_id: '',
     cost_center_id: '',
@@ -20,7 +20,7 @@ const CreateReimbursement = ({ user }) => {
     description: '',
     status: 'draft'
   });
-  
+
   const [items, setItems] = useState([
     {
       expense_category_id: '',
@@ -52,15 +52,15 @@ const CreateReimbursement = ({ user }) => {
   const fetchMasterData = async () => {
     try {
       const apiUrl = process.env.REACT_APP_API_URL;
-      const [deptRes, projRes, catRes] = await Promise.all([
+      const [deptRes, projRes] = await Promise.all([
         axios.get(`${apiUrl}/reimbursements/departments`, { withCredentials: true }),
         axios.get(`${apiUrl}/reimbursements/projects`, { withCredentials: true }),
-        axios.get(`${apiUrl}/reimbursements/expense-categories`, { withCredentials: true })
+        // axios.get(`${apiUrl}/reimbursements/expense-categories`, { withCredentials: true }) // Removed
       ]);
-      
+
       if (deptRes.data.success) setDepartments(deptRes.data.data);
       if (projRes.data.success) setProjects(projRes.data.data);
-      if (catRes.data.success) setExpenseCategories(catRes.data.data);
+      // if (catRes.data.success) setExpenseCategories(catRes.data.data);
     } catch (error) {
       logger.error('Error fetching master data:', error);
     }
@@ -100,14 +100,14 @@ const CreateReimbursement = ({ user }) => {
   const updateItem = (index, field, value) => {
     const updatedItems = [...items];
     updatedItems[index] = { ...updatedItems[index], [field]: value };
-    
+
     if (field === 'expense_type') {
       updatedItems[index].meal_type = '';
       updatedItems[index].people_count = '';
       updatedItems[index].travel_purpose = '';
       updatedItems[index].lodging_city = '';
     }
-    
+
     setItems(updatedItems);
   };
 
@@ -140,7 +140,7 @@ const CreateReimbursement = ({ user }) => {
       return;
     }
 
-    const validItems = items.filter(item => 
+    const validItems = items.filter(item =>
       item.expense_type && item.amount && item.expense_date
     );
 
@@ -153,7 +153,7 @@ const CreateReimbursement = ({ user }) => {
     try {
       const apiUrl = process.env.REACT_APP_API_URL;
       const formDataToSend = new FormData();
-      
+
       formDataToSend.append('data', JSON.stringify({
         ...formData,
         status,
@@ -390,20 +390,7 @@ const CreateReimbursement = ({ user }) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label htmlFor={`expense_category_id_${index}`} className="text-xs font-medium text-gray-700 mb-0.5 block">Expense Category</label>
-                <select
-                  id={`expense_category_id_${index}`}
-                  value={item.expense_category_id}
-                  onChange={(e) => updateItem(index, 'expense_category_id', e.target.value)}
-                  className="w-full text-xs border border-gray-300 rounded px-2 py-1 text-gray-600"
-                >
-                  <option value="">Select Category</option>
-                  {expenseCategories.map(cat => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))}
-                </select>
-              </div>
+              {/* Expense Category Removed */}
 
               <div>
                 <label htmlFor={`expense_type_${index}`} className="text-xs font-medium text-gray-700 mb-0.5 block">Expense Type *</label>
@@ -425,17 +412,20 @@ const CreateReimbursement = ({ user }) => {
 
               <div>
                 <label htmlFor={`amount_${index}`} className="text-xs font-medium text-gray-700 mb-0.5 block">Amount *</label>
-                <input
-                  id={`amount_${index}`}
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={item.amount}
-                  onChange={(e) => updateItem(index, 'amount', e.target.value)}
-                  className="w-full text-xs border border-gray-300 rounded px-2 py-1 text-gray-600"
-                  placeholder="0.00"
-                  required
-                />
+                <div className="relative">
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 font-medium text-xs">₹</span>
+                  <input
+                    id={`amount_${index}`}
+                    type="number"
+                    step="1"
+                    min="0"
+                    value={item.amount}
+                    onChange={(e) => updateItem(index, 'amount', e.target.value)}
+                    className="w-full text-xs border border-gray-300 rounded pl-6 pr-2 py-1 text-gray-600 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    placeholder="0"
+                    required
+                  />
+                </div>
               </div>
 
               <div>
