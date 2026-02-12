@@ -53,7 +53,7 @@ app.use(passport.session());
 // Initialize PostgreSQL database
 // NOSONAR: Top-level await not available in CommonJS modules
 console.log('\n========================================');
-console.log('Starting Enterprise Reimbursement Backend');
+console.log('Starting XDLINX SPACE LABS Backend');
 console.log('========================================\n');
 
 (async () => {

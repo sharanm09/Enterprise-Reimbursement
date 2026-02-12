@@ -1,21 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { 
-  FiLayout, 
-  FiUsers, 
-  FiBriefcase, 
-  FiDollarSign, 
-  FiFolder, 
-  FiFileText, 
-  FiPlus, 
-  FiCheckCircle, 
-  FiList, 
+import {
+  FiLayout,
+  FiUsers,
+  FiBriefcase,
+  FiDollarSign,
+  FiFolder,
+  FiFileText,
+  FiPlus,
+  FiCheckCircle,
+  FiList,
   FiChevronDown,
   FiLogOut,
   FiMenu,
   FiX
 } from 'react-icons/fi';
 import bgImage from '../images/bg.png';
+import logo from '../images/logo.svg';
 
 const Layout = ({ children, user, onLogout, onNavigate, currentPage }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -149,7 +150,7 @@ const Layout = ({ children, user, onLogout, onNavigate, currentPage }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 flex overflow-hidden">
-      <aside 
+      <aside
         ref={sidebarRef}
         className={`${sidebarOpen ? 'w-56' : 'w-18'} bg-white/80 backdrop-blur-lg border-r border-slate-200 transition-all duration-300 ease-in-out flex flex-col h-screen fixed left-0 top-0 z-30 shadow-xl`}
         style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(249,250,251,0.95) 100%)' }}
@@ -158,18 +159,13 @@ const Layout = ({ children, user, onLogout, onNavigate, currentPage }) => {
       >
         <div className="p-4 flex items-center justify-between border-b border-slate-200 flex-shrink-0 h-16">
           {sidebarOpen && (
-            <div className="flex items-center space-x-2.5 flex-1">
-              <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-md">
-                <span className="text-white font-bold text-xs">E</span>
-              </div>
-              <h1 className="text-slate-700 font-bold text-xs tracking-wide">
-                Enterprise
-              </h1>
+            <div className="flex items-center justify-center flex-1">
+              <img src={logo} alt="XDLINX SPACE LABS" className="h-10 object-contain" />
             </div>
           )}
           {!sidebarOpen && (
-            <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center mx-auto shadow-md">
-              <span className="text-white font-bold text-xs">E</span>
+            <div className="w-9 h-9 flex items-center justify-center mx-auto">
+              <img src={logo} alt="X" className="w-full h-full object-contain" />
             </div>
           )}
           <button
@@ -206,14 +202,14 @@ const Layout = ({ children, user, onLogout, onNavigate, currentPage }) => {
                           const baseClasses = 'w-full flex items-center transition-all duration-200';
                           if (sidebarOpen) {
                             const sidebarClasses = 'space-x-3 px-3 py-2.5 rounded-lg';
-                            const activeClasses = active 
-                              ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md' 
+                            const activeClasses = active
+                              ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md'
                               : 'text-slate-700 hover:bg-blue-50 hover:text-slate-900';
                             return `${baseClasses} ${sidebarClasses} ${activeClasses}`;
                           }
                           const collapsedClasses = 'justify-center px-2 py-2.5 rounded-lg';
-                          const activeClasses = active 
-                            ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md' 
+                          const activeClasses = active
+                            ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md'
                             : 'text-slate-700 hover:bg-blue-50 hover:text-slate-900';
                           return `${baseClasses} ${collapsedClasses} ${activeClasses}`;
                         })()}
@@ -236,22 +232,17 @@ const Layout = ({ children, user, onLogout, onNavigate, currentPage }) => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="bg-white/90 backdrop-blur-lg flex-shrink-0 h-16 border-b border-slate-200 w-full fixed top-0 left-0 z-40 shadow-md">
           <div className="px-5 py-3 flex items-center justify-between h-full">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center">
               <button
                 onClick={toggleSidebar}
-                className="p-2 rounded-lg hover:bg-blue-50 text-slate-600 hover:text-blue-600 transition-colors"
+                className="p-2 rounded-lg hover:bg-blue-50 text-slate-600 hover:text-blue-600 transition-colors mr-3"
                 aria-label="Toggle sidebar"
               >
                 <FiMenu className="w-5 h-5" />
               </button>
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm">
-                <span className="text-white font-bold text-[10px]">E</span>
-              </div>
-              <h1 className="text-slate-700 font-bold text-sm">
-                Enterprise Reimbursement
-              </h1>
+              <img src={logo} alt="XDLINX SPACE LABS" className="h-10 object-contain" />
             </div>
-            
+
             <div className="flex items-center space-x-3">
               <div className="relative" ref={dropdownRef}>
                 <button
@@ -288,7 +279,7 @@ const Layout = ({ children, user, onLogout, onNavigate, currentPage }) => {
 
         <div className="flex-1 flex flex-col overflow-hidden relative" style={{ marginTop: '64px', marginLeft: sidebarOpen ? '224px' : '72px' }}>
           {/* Background image - fixed to viewport, doesn't move with sidebar */}
-          <div 
+          <div
             className="fixed z-0 pointer-events-none"
             style={{
               backgroundImage: `url(${bgImage})`,
