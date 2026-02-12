@@ -11,10 +11,16 @@ class User {
     this.surname = data.surname || data.family_name;
     this.roleId = data.roleId || data.role_id;
     this.managerId = data.managerId || data.manager_id;
+    this.departmentId = data.departmentId || data.department_id;
     this.bankAccountNo = data.bankAccountNo || data.bank_account_no;
     this.lastLogin = data.lastLogin || data.last_login;
     this.createdAt = data.createdAt || data.created_at;
     this.updatedAt = data.updatedAt || data.updated_at;
+    this.employeeId = data.employeeId || data.employee_id;
+    this.ifscCode = data.ifscCode || data.ifsc_code;
+    this.isIciciBank = data.isIciciBank !== undefined ? data.isIciciBank : data.is_icici_bank;
+    this.costCenter = data.costCenter || data.cost_center;
+    this.location = data.location || data.location;
   }
 
   toJSON() {
@@ -26,10 +32,16 @@ class User {
       email: this.email,
       givenName: this.givenName,
       surname: this.surname,
-      surname: this.surname,
+
       roleId: this.roleId,
+      departmentId: this.departmentId,
       managerId: this.managerId,
       bankAccountNo: this.bankAccountNo,
+      employeeId: this.employeeId,
+      ifscCode: this.ifscCode,
+      isIciciBank: this.isIciciBank,
+      costCenter: this.costCenter,
+      location: this.location,
       lastLogin: this.lastLogin
     };
   }
@@ -117,7 +129,7 @@ class User {
         LEFT JOIN roles r ON u.role_id = r.id 
         ORDER BY u.created_at DESC
       `);
-      return rows.map(row => {
+      return result.rows.map(row => {
         const user = new User(row);
         if (row.role_name) {
           user.role = {
@@ -136,10 +148,27 @@ class User {
   async updateUser() {
     const result = await pool.query(
       `UPDATE users 
-       SET display_name = $1, email = $2, given_name = $3, surname = $4, bank_account_no = $5, last_login = $6, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $7
+       SET display_name = $1, email = $2, given_name = $3, surname = $4, bank_account_no = $5, 
+           employee_id = $6, ifsc_code = $7, is_icici_bank = $8, cost_center = $9, location = $10,
+           department_id = $11,
+           last_login = $12, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $13
        RETURNING *`,
-      [this.displayName, this.email, this.givenName, this.surname, this.bankAccountNo, this.lastLogin, this.id]
+      [
+        this.displayName,
+        this.email,
+        this.givenName,
+        this.surname,
+        this.bankAccountNo,
+        this.employeeId || null,
+        this.ifscCode || null,
+        this.isIciciBank || false,
+        this.costCenter || null,
+        this.location || null,
+        this.departmentId || null,
+        this.lastLogin,
+        this.id
+      ]
     );
 
     if (result.rows.length > 0) {
@@ -184,8 +213,8 @@ class User {
     const surnameValue = this.surname || null;
 
     const result = await pool.query(
-      `INSERT INTO users (azure_id, display_name, email, given_name, surname, family_name, role_id, manager_id, bank_account_no, last_login)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      `INSERT INTO users (azure_id, display_name, email, given_name, surname, family_name, role_id, manager_id, bank_account_no, employee_id, ifsc_code, is_icici_bank, cost_center, location, department_id, last_login)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
        RETURNING *`,
       [
         this.azureId,
@@ -197,9 +226,16 @@ class User {
         roleId,
         managerId,
         this.bankAccountNo,
+        this.employeeId || null,
+        this.ifscCode || null,
+        this.isIciciBank || false,
+        this.costCenter || null,
+        this.location || null,
+        this.departmentId || null,
         this.lastLogin || new Date()
       ]
     );
+
 
     if (result.rows.length > 0) {
       Object.assign(this, new User(result.rows[0]));

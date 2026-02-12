@@ -118,11 +118,27 @@ async function createUsersTable(idColumnDef, fkType) {
     if (!columnNames.has('bank_account_no')) {
       await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS bank_account_no VARCHAR(50)');
     }
+    if (!columnNames.has('employee_id')) {
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS employee_id VARCHAR(50) UNIQUE');
+    }
+    if (!columnNames.has('ifsc_code')) {
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS ifsc_code VARCHAR(20)');
+    }
+    if (!columnNames.has('is_icici_bank')) {
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS is_icici_bank BOOLEAN DEFAULT false');
+    }
+    if (!columnNames.has('cost_center')) {
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS cost_center VARCHAR(100)');
+    }
+    if (!columnNames.has('location')) {
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS location VARCHAR(100)');
+    }
   } else {
     // Use string concatenation with validated values to avoid SQL injection
     const query = 'CREATE TABLE users (' +
       safeIdColumnDef + ', ' +
       'azure_id VARCHAR(255) UNIQUE NOT NULL, ' +
+      'employee_id VARCHAR(50) UNIQUE, ' +
       'display_name VARCHAR(255) NOT NULL, ' +
       'email VARCHAR(255) UNIQUE NOT NULL, ' +
       'given_name VARCHAR(255), ' +
@@ -130,9 +146,12 @@ async function createUsersTable(idColumnDef, fkType) {
       'family_name VARCHAR(255), ' +
       'role_id ' + safeFkType + ' REFERENCES roles(id), ' +
       'department_id ' + safeFkType + ' REFERENCES departments(id), ' +
-      'department_id ' + safeFkType + ' REFERENCES departments(id), ' +
       'manager_id ' + safeFkType + ' REFERENCES users(id), ' +
       'bank_account_no VARCHAR(50), ' +
+      'ifsc_code VARCHAR(20), ' +
+      'is_icici_bank BOOLEAN DEFAULT false, ' +
+      'cost_center VARCHAR(100), ' +
+      'location VARCHAR(100), ' +
       'last_login TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ' +
       'created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ' +
       'updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP' +

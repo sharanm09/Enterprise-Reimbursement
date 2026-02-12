@@ -9,6 +9,37 @@ const Role = require('../models/Role');
 const azureConfig = require('../config/azureConfig');
 const { pool } = require('../config/database');
 const logger = require('../utils/logger');
+const multer = require('multer');
+const xlsx = require('xlsx');
+const fs = require('fs');
+const path = require('path');
+
+// Configure multer for temporary file storage
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '../uploads/temp');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+      file.mimetype === 'text/csv' ||
+      file.originalname.match(/\.(xlsx|csv)$/)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only .xlsx and .csv files are allowed!'), false);
+    }
+  }
+});
 
 const router = express.Router();
 
@@ -378,7 +409,13 @@ router.get('/users', isSuperAdmin, async (req, res) => {
       FROM users u
       LEFT JOIN roles r ON u.role_id = r.id
       LEFT JOIN users m ON u.manager_id = m.id
-      ORDER BY u.created_at DESC
+      ORDER BY 
+        CASE 
+          WHEN u.employee_id ~ '^[0-9]+$' THEN CAST(u.employee_id AS INTEGER) 
+          WHEN u.employee_id ~ '^[A-Za-z]+[0-9]+$' THEN CAST(NULLIF(regexp_replace(u.employee_id, '[^0-9]', '', 'g'), '') AS INTEGER)
+          ELSE 999999 
+        END ASC,
+        u.employee_id ASC
     `);
 
     res.json({
@@ -395,7 +432,16 @@ router.get('/users', isSuperAdmin, async (req, res) => {
         managerId: row.manager_id,
         managerName: row.manager_name,
         managerEmail: row.manager_email,
-        bankAccountNo: row.bank_account_no
+        managerId: row.manager_id,
+        managerName: row.manager_name,
+        managerEmail: row.manager_email,
+        bankAccountNo: row.bank_account_no,
+        employeeId: row.employee_id,
+        ifscCode: row.ifsc_code,
+        isIciciBank: row.is_icici_bank,
+        costCenter: row.cost_center,
+        location: row.location,
+        departmentId: row.department_id
       }))
     });
   } catch (error) {
@@ -405,15 +451,21 @@ router.get('/users', isSuperAdmin, async (req, res) => {
 });
 
 router.post('/users', isSuperAdmin, async (req, res) => {
+  console.log('--- Entering POST /users ---');
   try {
-    const { displayName, email, roleId, managerId, bankAccountNo } = req.body;
+    const { displayName, email, roleId, managerId, bankAccountNo, employeeId, ifscCode, isIciciBank, costCenter, location, departmentId } = req.body;
 
     if (!displayName || !email || !roleId) {
       return res.status(400).json({ success: false, message: 'Display Name, Email, and Role are required' });
     }
 
     // Check if user exists
-    const existingUser = await User.findOne({ email });
+    let existingUser;
+    try {
+      existingUser = await User.findOne({ email });
+    } catch (e) {
+      throw new Error(`User.findOne failed: ${e.message}`);
+    }
     if (existingUser) {
       return res.status(409).json({ success: false, message: 'User with this email already exists' });
     }
@@ -424,13 +476,28 @@ router.post('/users', isSuperAdmin, async (req, res) => {
       email,
       roleId,
       managerId: managerId || null,
-      bankAccountNo: bankAccountNo || null
+      bankAccountNo: bankAccountNo || null,
+      employeeId: employeeId || null,
+      ifscCode: ifscCode || null,
+      isIciciBank: isIciciBank || false,
+      costCenter: costCenter || null,
+      location: location || null,
+      departmentId: departmentId || null
     });
 
-    const roleResult = await Role.findById(roleId);
+    let roleResult;
+    try {
+      roleResult = await Role.findById(roleId);
+    } catch (e) {
+      throw new Error(`Role.findById failed: ${e.message}`);
+    }
     const roleName = roleResult ? roleResult.name : null;
 
-    await newUser.createUser(roleId, managerId || null, roleName);
+    try {
+      await newUser.createUser(roleId, managerId || null, roleName);
+    } catch (e) {
+      throw new Error(`newUser.createUser failed: ${e.message}`);
+    }
 
     res.status(201).json({
       success: true,
@@ -439,14 +506,14 @@ router.post('/users', isSuperAdmin, async (req, res) => {
     });
   } catch (error) {
     logger.error('Error creating user:', error);
-    res.status(500).json({ success: false, message: 'Failed to create user', error: error.message });
+    res.status(500).json({ success: false, message: 'Failed to create user', error: error.message, stack: error.stack });
   }
 });
 
 router.put('/users/:id', isSuperAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { displayName, email, bankAccountNo } = req.body;
+    const { displayName, email, bankAccountNo, employeeId, ifscCode, isIciciBank, costCenter, location, departmentId } = req.body;
 
     if (!id) {
       return res.status(400).json({ success: false, message: 'User ID is required' });
@@ -461,6 +528,12 @@ router.put('/users/:id', isSuperAdmin, async (req, res) => {
     if (displayName) user.displayName = displayName;
     if (email) user.email = email;
     if (bankAccountNo !== undefined) user.bankAccountNo = bankAccountNo;
+    if (employeeId !== undefined) user.employeeId = employeeId;
+    if (ifscCode !== undefined) user.ifscCode = ifscCode;
+    if (isIciciBank !== undefined) user.isIciciBank = isIciciBank;
+    if (costCenter !== undefined) user.costCenter = costCenter;
+    if (location !== undefined) user.location = location;
+    if (departmentId !== undefined) user.departmentId = departmentId;
 
     await user.updateUser();
 
@@ -629,6 +702,260 @@ router.get('/logout', (req, res) => {
       res.json({ success: true, message: 'Logged out successfully' });
     });
   });
+});
+
+router.post('/users/import', isSuperAdmin, upload.single('file'), async (req, res) => {
+  let client;
+  const tempFilePath = req.file ? req.file.path : null;
+
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+
+    // Parse Excel file
+    const workbook = xlsx.readFile(req.file.path);
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const data = xlsx.utils.sheet_to_json(sheet);
+
+    if (!data || data.length === 0) {
+      return res.status(400).json({ success: false, message: 'File is empty or invalid' });
+    }
+
+    // Initialize summary
+    let summary = {
+      totalRows: data.length,
+      inserted: 0,
+      updated: 0,
+      failed: 0,
+      errors: []
+    };
+
+    const validEmployeeIds = [];
+    const rowsToProcess = [];
+
+    // Pre-validation and ID extraction
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      const rowNumber = i + 2; // Excel row number (1-based + 1 for header)
+      // Check various variations for Employee ID
+      const employeeId = row['Employee ID'] || row['employee_id'] || row['EmployeeId'] || row['Emp ID'] || row['EmpID'] || row['Emp Id'];
+      const email = row['Email'] || row['email'];
+      const displayName = row['Display Name'] || row['display_name'] || row['Name'];
+
+      if (!employeeId) {
+        summary.failed++;
+        summary.errors.push({ row: rowNumber, error: 'Missing Employee ID' });
+        continue;
+      }
+
+      // Basic duplicate check within file
+      if (validEmployeeIds.includes(employeeId)) {
+        summary.failed++;
+        summary.errors.push({ row: rowNumber, error: 'Duplicate Employee ID in file' });
+        continue;
+      }
+
+      if (!email || !String(email).includes('@')) {
+        summary.failed++;
+        summary.errors.push({ row: rowNumber, error: 'Invalid or missing Email' });
+        continue;
+      }
+
+      if (!displayName) {
+        summary.failed++;
+        summary.errors.push({ row: rowNumber, error: 'Missing Display Name' });
+        continue;
+      }
+
+      validEmployeeIds.push(employeeId);
+      rowsToProcess.push({ ...row, employeeIdLower: String(employeeId).trim(), rowNumber });
+    }
+
+
+    if (validEmployeeIds.length === 0) {
+      // Cleanup
+      if (tempFilePath && fs.existsSync(tempFilePath)) {
+        fs.unlinkSync(tempFilePath);
+      }
+      return res.json({ success: true, summary });
+    }
+
+    client = await pool.connect();
+    await client.query('BEGIN');
+
+    // Fetch existing users by employee_id or email
+    // We check both because email must be unique too, and employee_id is the key
+    const existingUsersResult = await client.query(
+      'SELECT * FROM users WHERE employee_id = ANY($1) OR email = ANY($2)',
+      [validEmployeeIds, rowsToProcess.map(r => r['Email'] || r['email'])]
+    );
+
+    const existingUsersMap = new Map(); // Key: employee_id
+    const existingEmailsMap = new Set();
+
+    existingUsersResult.rows.forEach(user => {
+      if (user.employee_id) existingUsersMap.set(user.employee_id, user);
+      if (user.email) existingEmailsMap.add(user.email.toLowerCase());
+    });
+
+    // Process rows
+    for (const row of rowsToProcess) {
+      try {
+        const employeeId = row['Employee ID'] || row['employee_id'] || row['EmployeeId'] || row['Emp ID'] || row['EmpID'] || row['Emp Id'];
+        const employeeIdStr = String(employeeId).trim();
+
+        // Map other fields
+        const email = (row['Email'] || row['email']).trim();
+        const displayName = (row['Display Name'] || row['display_name'] || row['Name']).trim();
+        const bankAccountNo = row['Bank Account No'] || row['bank_account_no'] || row['BankAccountNo'];
+        const ifscCode = row['IFSC Code'] || row['ifsc_code'] || row['IFSC'];
+        const costCenter = row['Cost Center'] || row['cost_center'] || row['CostCenter'];
+        const location = row['Location'] || row['location'];
+        const departmentName = row['Department'] || row['department'];
+        const roleName = row['Role'] || row['role'];
+        const excelRoleId = row['Role ID'] || row['role_id'] || row['RoleID']; // Support direct Role ID
+        const isIciciStr = row['Is ICICI'] || row['is_icici_bank'];
+        const isIciciBank = String(isIciciStr).toLowerCase() === 'yes' || String(isIciciStr).toLowerCase() === 'true';
+
+        // Get Role ID
+        let roleId = null;
+
+        // 1. Try direct Role ID if provided
+        if (excelRoleId) {
+          const roleRes = await client.query('SELECT id FROM roles WHERE id = $1', [excelRoleId]);
+          if (roleRes.rows.length > 0) roleId = roleRes.rows[0].id;
+        }
+
+        // 2. Try lookup by name if no ID or ID not found
+        if (!roleId && roleName) {
+          const roleRes = await client.query('SELECT id FROM roles WHERE LOWER(name) = LOWER($1) OR LOWER(display_name) = LOWER($1)', [roleName]);
+          if (roleRes.rows.length > 0) roleId = roleRes.rows[0].id;
+        }
+
+        // 3. Default to employee
+        if (!roleId) {
+          const roleRes = await client.query('SELECT id FROM roles WHERE name = $1', ['employee']);
+          if (roleRes.rows.length > 0) roleId = roleRes.rows[0].id;
+        }
+
+        // Get Department ID
+        let departmentId = null;
+        if (departmentName) {
+          const deptRes = await client.query('SELECT id FROM departments WHERE LOWER(name) = LOWER($1)', [departmentName]);
+          if (deptRes.rows.length > 0) departmentId = deptRes.rows[0].id;
+        }
+
+        const existingUser = existingUsersMap.get(employeeIdStr);
+
+        if (existingUser) {
+          // Update Logic: Update only NULL or empty fields
+          const updates = [];
+          const values = [];
+          let paramIndex = 1;
+
+          // Check each field
+          if ((!existingUser.display_name) && displayName) {
+            updates.push(`display_name = $${paramIndex++}`);
+            values.push(displayName);
+          }
+          if ((!existingUser.email) && email) {
+            // Check email uniqueness first if changing
+            if (existingUser.email !== email && existingEmailsMap.has(email.toLowerCase())) {
+              throw new Error(`Email ${email} already in use by another user`);
+            }
+            updates.push(`email = $${paramIndex++}`);
+            values.push(email);
+          }
+          if ((!existingUser.bank_account_no) && bankAccountNo) {
+            updates.push(`bank_account_no = $${paramIndex++}`);
+            values.push(bankAccountNo);
+          }
+          if ((!existingUser.ifsc_code) && ifscCode) {
+            updates.push(`ifsc_code = $${paramIndex++}`);
+            values.push(ifscCode);
+          }
+          if ((existingUser.is_icici_bank === null) && isIciciBank !== undefined) {
+            updates.push(`is_icici_bank = $${paramIndex++}`);
+            values.push(isIciciBank);
+          }
+          if ((!existingUser.cost_center) && costCenter) {
+            updates.push(`cost_center = $${paramIndex++}`);
+            values.push(costCenter);
+          }
+          if ((!existingUser.location) && location) {
+            updates.push(`location = $${paramIndex++}`);
+            values.push(location);
+          }
+          if ((!existingUser.department_id) && departmentId) {
+            updates.push(`department_id = $${paramIndex++}`);
+            values.push(departmentId);
+          }
+          if ((!existingUser.role_id) && roleId) {
+            updates.push(`role_id = $${paramIndex++}`);
+            values.push(roleId);
+          }
+
+          if (updates.length > 0) {
+            values.push(existingUser.id);
+            await client.query(`UPDATE users SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = $${paramIndex}`, values);
+            summary.updated++;
+          } else {
+            // No updates needed (all fields already filled)
+            // summary.updated++; // Or count as skipped/processed
+          }
+
+        } else {
+          // Insert Logic
+          // Check if email exists for another user (not caught by map if map is keyed by employee_id)
+          if (existingEmailsMap.has(email.toLowerCase())) {
+            throw new Error(`Email ${email} already exists for another employee ID`);
+          }
+
+          const azureId = crypto.randomUUID(); // Auto-generate
+
+          await client.query(
+            `INSERT INTO users (
+                         azure_id, display_name, email, role_id, employee_id, 
+                         bank_account_no, ifsc_code, is_icici_bank, cost_center, 
+                         location, department_id, created_at, updated_at
+                     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+            [
+              azureId, displayName, email, roleId, employeeIdStr,
+              bankAccountNo || null, ifscCode || null, isIciciBank,
+              costCenter || null, location || null, departmentId
+            ]
+          );
+
+          summary.inserted++;
+          existingEmailsMap.add(email.toLowerCase()); // Add to map to prevent duplicates in same batch
+        }
+
+      } catch (rowError) {
+        summary.failed++;
+        summary.errors.push({ row: row.rowNumber, error: rowError.message });
+      }
+    }
+
+    await client.query('COMMIT');
+    res.json({ success: true, summary });
+
+  } catch (error) {
+    if (client) await client.query('ROLLBACK');
+    logger.error('Error importing users:', error);
+    res.status(500).json({ success: false, message: 'Failed to import users', error: error.message });
+  } finally {
+    if (client) client.release();
+    // Delete temp file
+    if (tempFilePath && fs.existsSync(tempFilePath)) {
+      try {
+        fs.unlinkSync(tempFilePath);
+      } catch (e) {
+        logger.error('Error deleting temp file:', e);
+      }
+    }
+  }
 });
 
 module.exports = router;
