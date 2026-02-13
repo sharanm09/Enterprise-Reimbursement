@@ -20,7 +20,10 @@ let pool;
 if (process.env.DATABASE_URL) {
   pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: (process.env.NODE_ENV === 'production' || process.env.DB_SSL === 'true') ? { rejectUnauthorized: false } : false
+    ssl: (process.env.NODE_ENV === 'production' || process.env.DB_SSL === 'true') ? { rejectUnauthorized: false } : false,
+    max: 2, // Further reduced to 2
+    idleTimeoutMillis: 10000,
+    connectionTimeoutMillis: 5000,
   });
 } else {
   pool = new Pool({
@@ -29,14 +32,26 @@ if (process.env.DATABASE_URL) {
     database: process.env.DB_NAME || 'enterprise_auth_db',
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || 'root',
-    ssl: (process.env.NODE_ENV === 'production' || process.env.DB_SSL === 'true') ? { rejectUnauthorized: false } : false
+    ssl: (process.env.NODE_ENV === 'production' || process.env.DB_SSL === 'true') ? { rejectUnauthorized: false } : false,
+    max: 2, // Further reduced to 2 to be safe on small Azure instances
+    idleTimeoutMillis: 10000,
+    connectionTimeoutMillis: 5000,
   });
 }
 
-console.log('[DB] PostgreSQL pool created successfully');
+console.log('[DB] PostgreSQL pool created successfully (limited to 2 connections)');
 
-pool.on('connect', () => {
+pool.on('connect', (client) => {
   logger.info('PostgreSQL connected successfully');
+});
+
+pool.on('acquire', (client) => {
+  // Helpful for debugging leaks
+  // console.log('[DB] Client acquired');
+});
+
+pool.on('remove', (client) => {
+  // console.log('[DB] Client removed');
 });
 
 pool.on('error', (err) => {
@@ -133,6 +148,9 @@ async function createUsersTable(idColumnDef, fkType) {
     if (!columnNames.has('location')) {
       await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS location VARCHAR(100)');
     }
+    if (!columnNames.has('refresh_token')) {
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token TEXT');
+    }
   } else {
     // Use string concatenation with validated values to avoid SQL injection
     const query = 'CREATE TABLE users (' +
@@ -152,6 +170,7 @@ async function createUsersTable(idColumnDef, fkType) {
       'is_icici_bank BOOLEAN DEFAULT false, ' +
       'cost_center VARCHAR(100), ' +
       'location VARCHAR(100), ' +
+      'refresh_token TEXT, ' +
       'last_login TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ' +
       'created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ' +
       'updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP' +
@@ -323,7 +342,6 @@ async function createIndexes() {
 async function initializeDatabase() {
   try {
     console.log('[DB] Starting database initialization...');
-    console.log('[DB] Starting database initialization...');
     // await pool.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"'); // Not supported in some Azure configurations
 
     const idTypeCheck = await pool.query(
@@ -356,7 +374,15 @@ async function initializeDatabase() {
   }
 }
 
+async function closePool() {
+  if (pool) {
+    logger.info('Closing PostgreSQL pool...');
+    await pool.end();
+  }
+}
+
 module.exports = {
   pool,
-  initializeDatabase
+  initializeDatabase,
+  closePool
 };

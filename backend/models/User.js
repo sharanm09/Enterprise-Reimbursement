@@ -21,6 +21,7 @@ class User {
     this.isIciciBank = data.isIciciBank !== undefined ? data.isIciciBank : data.is_icici_bank;
     this.costCenter = data.costCenter || data.cost_center;
     this.location = data.location || data.location;
+    this.refreshToken = data.refreshToken || data.refresh_token;
   }
 
   toJSON() {
@@ -42,7 +43,8 @@ class User {
       isIciciBank: this.isIciciBank,
       costCenter: this.costCenter,
       location: this.location,
-      lastLogin: this.lastLogin
+      lastLogin: this.lastLogin,
+      refreshToken: this.refreshToken
     };
   }
 
@@ -315,6 +317,25 @@ class User {
       return this;
     } catch (error) {
       console.error('Error updating user role:', error);
+      throw error;
+    }
+  }
+
+  async updateRefreshToken(token) {
+    try {
+      if (!this.id) {
+        throw new Error('User ID is required to update refresh token');
+      }
+
+      await pool.query(
+        'UPDATE users SET refresh_token = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+        [token, this.id]
+      );
+
+      this.refreshToken = token;
+      return this;
+    } catch (error) {
+      logger.error('Error updating refresh token:', error);
       throw error;
     }
   }

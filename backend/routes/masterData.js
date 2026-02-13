@@ -11,28 +11,38 @@ const {
 const router = express.Router();
 
 const isSuperAdminOrHR = async (req, res, next) => {
-  if (!req.isAuthenticated()) {
+  if (!req.user && !req.isAuthenticated()) {
+    const { verifyAccessToken } = require('../utils/tokenUtils');
+    const token = req.cookies?.accessToken || (req.headers.authorization || req.headers.Authorization)?.split(' ')[1];
+    if (token) {
+      const decoded = verifyAccessToken(token);
+      if (decoded) {
+        try {
+          const User = require('../models/User');
+          const user = await User.findById(decoded.id);
+          if (user) req.user = user;
+        } catch (e) { }
+      }
+    }
+  }
+
+  if (!req.user && !req.isAuthenticated()) {
     return res.status(401).json({ success: false, message: 'Not authenticated' });
   }
-  
+
   try {
     const User = require('../models/User');
-    const userId = req.user?.id || req.user?._id || req.session?.passport?.user;
-    
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'User ID not found in session' });
-    }
+    const user = req.user || await User.findById(req.user.id || req.user._id);
 
-    const user = await User.findById(userId);
     if (!user) {
       return res.status(401).json({ success: false, message: 'User not found' });
     }
-    
+
     const userRole = user.role?.name || '';
     if (userRole !== 'superadmin' && userRole !== 'hr') {
       return res.status(403).json({ success: false, message: 'Access denied. Super Admin or HR only.' });
     }
-    
+
     req.user = user;
     next();
   } catch (error) {

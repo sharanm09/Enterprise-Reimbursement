@@ -40,7 +40,7 @@ const TestLogin = () => {
         { userId },
         { withCredentials: true }
       );
-      
+
       if (response.data.success) {
         globalThis.location.href = '/dashboard';
       } else {
@@ -67,10 +67,10 @@ const TestLogin = () => {
           <FiAlertCircle className="w-5 h-5 text-yellow-500" />
           <h1 className="text-lg font-semibold text-gray-800">Test User Login</h1>
         </div>
-        
+
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-6">
           <p className="text-xs text-yellow-800">
-            <strong>⚠️ Development Mode Only:</strong> This page allows you to login as test users without Azure SSO authentication. 
+            <strong>⚠️ Development Mode Only:</strong> This page allows you to login as test users without Azure SSO authentication.
             This feature is only available in development environment.
           </p>
         </div>
@@ -83,7 +83,7 @@ const TestLogin = () => {
 
         <div className="space-y-3">
           <h2 className="text-sm font-semibold text-gray-700 mb-3">Available Test Users:</h2>
-          
+
           {testUsers.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-xs text-gray-500">No test users found. Please create test users first.</p>

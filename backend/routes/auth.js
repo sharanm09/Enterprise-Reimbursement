@@ -9,6 +9,7 @@ const Role = require('../models/Role');
 const azureConfig = require('../config/azureConfig');
 const { pool } = require('../config/database');
 const logger = require('../utils/logger');
+const { generateAccessToken, generateRefreshToken, verifyAccessToken, verifyRefreshToken } = require('../utils/tokenUtils');
 const multer = require('multer');
 const xlsx = require('xlsx');
 const fs = require('fs');
@@ -42,6 +43,25 @@ const upload = multer({
 });
 
 const router = express.Router();
+
+const setTokenCookies = (res, accessToken, refreshToken) => {
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax', // Relaxed to lax for better cross-port compatibility on localhost
+    path: '/'
+  };
+
+  res.cookie('accessToken', accessToken, {
+    ...cookieOptions,
+    maxAge: 15 * 60 * 1000 // 15 minutes
+  });
+
+  res.cookie('refreshToken', refreshToken, {
+    ...cookieOptions,
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  });
+};
 
 let client = null;
 if (process.env.AZURE_AD_TENANT_ID) {
@@ -115,12 +135,25 @@ passport.deserializeUser(async (id, done) => {
 });
 
 const isSuperAdmin = async (req, res, next) => {
-  if (!req.isAuthenticated()) {
+  if (!req.user && !req.isAuthenticated()) {
+    const token = req.cookies?.accessToken || (req.headers.authorization || req.headers.Authorization)?.split(' ')[1];
+    if (token) {
+      const decoded = verifyAccessToken(token);
+      if (decoded) {
+        try {
+          const user = await User.findById(decoded.id);
+          if (user) req.user = user;
+        } catch (e) { }
+      }
+    }
+  }
+
+  if (!req.user && !req.isAuthenticated()) {
     return res.status(401).json({ success: false, message: 'Not authenticated' });
   }
 
   try {
-    const user = await User.findById(req.user.id || req.user._id);
+    const user = req.user || await User.findById(req.user.id || req.user._id);
     if (!user) {
       return res.status(401).json({ success: false, message: 'User not found' });
     }
@@ -214,14 +247,14 @@ router.post('/validate-token', async (req, res) => {
 
         const user = await findOrCreateUser(azureId, decoded);
 
-        req.login(user, (err) => {
-          if (err) {
-            logger.error('Session creation error:', err);
-            return res.status(500).json({ success: false, message: 'Session creation failed', error: err.message });
-          }
+        const accessToken = generateAccessToken(user);
+        const refreshToken = generateRefreshToken(user);
 
-          res.json(buildUserResponse(user));
-        });
+        // Store refresh token in DB
+        user.updateRefreshToken(refreshToken).catch(err => logger.error('Error saving refresh token:', err));
+
+        setTokenCookies(res, accessToken, refreshToken);
+        res.json(buildUserResponse(user));
       } catch (verifyError) {
         logger.error('Token verification error:', verifyError);
         return res.status(401).json({ success: false, message: 'Invalid token', error: verifyError.message });
@@ -235,7 +268,22 @@ router.post('/validate-token', async (req, res) => {
 
 router.get('/user', async (req, res) => {
   try {
-    if (req.isAuthenticated()) {
+    // 1. Check for JWT in cookies or Authorization header if not already authenticated
+    if (!req.user && !req.isAuthenticated()) {
+      const token = req.cookies?.accessToken || (req.headers.authorization || req.headers.Authorization)?.split(' ')[1];
+      if (token) {
+        const { verifyAccessToken } = require('../utils/tokenUtils');
+        const decoded = verifyAccessToken(token);
+        if (decoded) {
+          try {
+            const user = await User.findById(decoded.id);
+            if (user) req.user = user;
+          } catch (e) { }
+        }
+      }
+    }
+
+    if (req.user || req.isAuthenticated()) {
       const userId = req.user?.id || req.user?._id || req.session?.passport?.user;
 
       if (!userId) {
@@ -369,27 +417,24 @@ router.post('/test-login', async (req, res) => {
       });
     }
 
-    req.login(user, (err) => {
-      if (err) {
-        logger.error('Test login session creation error:', err);
-        return res.status(500).json({
-          success: false,
-          message: 'Session creation failed',
-          error: err.message
-        });
-      }
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
 
-      const userData = user.toJSON ? user.toJSON() : user;
-      res.json({
-        success: true,
-        message: 'Logged in as test user successfully',
-        user: {
-          id: userData.id || userData._id,
-          displayName: userData.displayName,
-          email: userData.email,
-          role: user.role || null
-        }
-      });
+    // Store refresh token in DB
+    user.updateRefreshToken(refreshToken).catch(err => logger.error('Error saving refresh token:', err));
+
+    setTokenCookies(res, accessToken, refreshToken);
+
+    const userData = user.toJSON ? user.toJSON() : user;
+    res.json({
+      success: true,
+      message: 'Logged in as test user successfully',
+      user: {
+        id: userData.id || userData._id,
+        displayName: userData.displayName,
+        email: userData.email,
+        role: user.role || null
+      }
     });
   } catch (error) {
     logger.error('Error in test login:', error);
@@ -688,7 +733,53 @@ router.put('/users/:id/role', isSuperAdmin, async (req, res) => {
   }
 });
 
+router.post('/refresh-token', async (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(400).json({ success: false, message: 'Refresh token required' });
+  }
+
+  try {
+    const decoded = verifyRefreshToken(refreshToken);
+    if (!decoded) {
+      return res.status(401).json({ success: false, message: 'Invalid or expired refresh token' });
+    }
+
+    const user = await User.findById(decoded.id);
+    if (!user || user.refreshToken !== refreshToken) {
+      return res.status(401).json({ success: false, message: 'Invalid refresh token' });
+    }
+
+    const newAccessToken = generateAccessToken(user);
+    const newRefreshToken = generateRefreshToken(user);
+
+    await user.updateRefreshToken(newRefreshToken);
+
+    setTokenCookies(res, newAccessToken, newRefreshToken);
+
+    res.json({
+      success: true
+    });
+  } catch (error) {
+    logger.error('Refresh token error:', error);
+    res.status(500).json({ success: false, message: 'Token refresh failed' });
+  }
+});
+
 router.get('/logout', (req, res) => {
+  const userId = req.user?.id || req.user?._id;
+
+  if (userId) {
+    User.findById(userId).then(user => {
+      if (user) user.updateRefreshToken(null).catch(e => logger.error('Error clearing refresh token:', e));
+    });
+  }
+
+  res.clearCookie('accessToken');
+  res.clearCookie('refreshToken');
+  res.clearCookie('connect.sid'); // Also clear session cookie just in case
+
   req.logout((err) => {
     if (err) {
       logger.error('Logout error:', err);

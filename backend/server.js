@@ -6,7 +6,8 @@ const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
 const passport = require('passport');
-const { pool, initializeDatabase } = require('./config/database');
+const cookieParser = require('cookie-parser');
+const { pool, initializeDatabase, closePool } = require('./config/database');
 const logger = require('./utils/logger');
 
 const authRoutes = require('./routes/auth');
@@ -31,6 +32,7 @@ app.use(cors({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -58,19 +60,23 @@ console.log('========================================\n');
 
 (async () => {
   try {
-    console.log('[STARTUP] Connecting to PostgreSQL database...');
-    console.log(`[STARTUP] Host: ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 5432}`);
-    console.log(`[STARTUP] Database: ${process.env.DB_NAME || 'enterprise_auth_db'}\n`);
+    console.log('[STARTUP] Initializing database...');
+    // We try to initialize, but if connection slots are full, we log it and let the app start
+    // the idle timeout will eventually clear slots.
+    await initializeDatabase().catch(err => {
+      if (err.code === '53300') {
+        logger.error('CRITICAL: Database connection limit reached (53300).');
+        console.error('\n[DATABASE ERROR] Too many connections! Check for other running instances or zombie processes.');
+        console.error('[DATABASE ERROR] The app will start, but database queries will fail until connections are released.\n');
+      } else {
+        throw err;
+      }
+    });
 
-    await initializeDatabase();
-
-    console.log('[STARTUP] ✅ PostgreSQL database initialized successfully\n');
-    logger.info('PostgreSQL database initialized successfully');
+    console.log('[STARTUP] ✅ Startup check complete\n');
   } catch (error) {
-    console.error('[STARTUP] ❌ Error initializing PostgreSQL database:', error.message);
-    logger.error('Error initializing PostgreSQL database:', error.message);
-    logger.warn('The app will continue, but database operations may fail.');
-    logger.warn('Please ensure PostgreSQL is running and credentials are correct in .env file.');
+    console.error('[STARTUP] ❌ Critical Error during startup:', error.message);
+    logger.error('Critical Database initialization error:', error.message);
   }
 })();
 
@@ -92,5 +98,18 @@ app.listen(PORT, () => {
   logger.info(`Server is running on port ${PORT}`);
   logger.info(`Environment: ${NODE_ENV}`);
   logger.info(`Frontend URL: ${process.env.FRONTEND_URL}`);
+});
+
+// Graceful shutdown
+process.on('SIGINT', async () => {
+  logger.info('SIGINT signal received.');
+  await closePool();
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  logger.info('SIGTERM signal received.');
+  await closePool();
+  process.exit(0);
 });
 

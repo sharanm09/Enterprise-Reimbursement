@@ -1,0 +1,13 @@
+{
+    "ignore": [
+        "node_modules",
+        "logs",
+        "*.log",
+        "coverage",
+        ".git",
+        "uploads",
+        "temp",
+        "backend/uploads",
+        "backend/logs"
+    ]
+}
