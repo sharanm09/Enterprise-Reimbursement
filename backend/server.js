@@ -15,6 +15,7 @@ const dashboardStatsRoutes = require('./routes/dashboardStats');
 const reimbursementRoutes = require('./routes/reimbursements');
 const masterDataRoutes = require('./routes/masterData');
 const approvalRoutes = require('./routes/approvals');
+const companyRoutes = require('./routes/companyRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;

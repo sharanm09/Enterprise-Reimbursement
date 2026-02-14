@@ -245,6 +245,39 @@ async function createMasterDataTables(idColumnDef, fkType) {
   await pool.query(expenseCategoriesQuery);
 }
 
+async function createCompanyTables(idColumnDef, fkType) {
+  const safeIdColumnDef = validateIdColumnDef(idColumnDef);
+  const safeFkType = validateFkType(fkType);
+
+  const companyDetailsQuery = 'CREATE TABLE IF NOT EXISTS company_details (' +
+    safeIdColumnDef + ', ' +
+    'company_name VARCHAR(255), ' +
+    'gst_no VARCHAR(50), ' +
+    'pan_no VARCHAR(50), ' +
+    'registered_office TEXT, ' +
+    'corporate_office TEXT, ' +
+    'website VARCHAR(255), ' +
+    'portfolio VARCHAR(255), ' +
+    'logo_path VARCHAR(255), ' +
+    'created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ' +
+    'updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP' +
+    ')';
+  await pool.query(companyDetailsQuery);
+
+  const companyBankAccountsQuery = 'CREATE TABLE IF NOT EXISTS company_bank_accounts (' +
+    safeIdColumnDef + ', ' +
+    'company_id ' + safeFkType + ' REFERENCES company_details(id) ON DELETE CASCADE, ' +
+    'bank_name VARCHAR(255) NOT NULL, ' +
+    'account_number VARCHAR(50) NOT NULL, ' +
+    'ifsc_code VARCHAR(20), ' +
+    'branch VARCHAR(100), ' +
+    'is_default BOOLEAN DEFAULT false, ' +
+    'created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ' +
+    'updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP' +
+    ')';
+  await pool.query(companyBankAccountsQuery);
+}
+
 async function createReimbursementTables(idColumnDef, fkType) {
   const safeIdColumnDef = validateIdColumnDef(idColumnDef);
   const safeFkType = validateFkType(fkType);
@@ -339,6 +372,7 @@ async function initializeDatabase() {
     await createUsersTable(idColumnDef, fkType);
     await createDashboardStatsTable(idColumnDef);
     await createMasterDataTables(idColumnDef, fkType);
+    await createCompanyTables(idColumnDef, fkType);
     await createReimbursementTables(idColumnDef, fkType);
     await createIndexes();
 
