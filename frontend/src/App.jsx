@@ -52,6 +52,7 @@ function AppContent() {
       }
     } catch (error) {
       if (error.response?.status === 401) {
+        // If refresh fails, then clear user
         setUser(null);
       }
     } finally {
@@ -79,7 +80,8 @@ function AppContent() {
         );
 
         if (backendResponse.data.success) {
-          setUser(backendResponse.data.user);
+          const { user } = backendResponse.data;
+          setUser(user);
           navigate('/dashboard');
         }
       } catch (backendError) {
