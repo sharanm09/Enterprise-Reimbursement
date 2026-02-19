@@ -13,16 +13,32 @@ const router = express.Router();
 const isSuperAdminOrHR = async (req, res, next) => {
   if (!req.user && !req.isAuthenticated()) {
     const { verifyAccessToken } = require('../utils/tokenUtils');
-    const token = req.cookies?.accessToken || (req.headers.authorization || req.headers.Authorization)?.split(' ')[1];
+    let token = req.cookies?.accessToken;
+    let decoded = null;
+
     if (token) {
-      const decoded = verifyAccessToken(token);
-      if (decoded) {
-        try {
-          const User = require('../models/User');
-          const user = await User.findById(decoded.id);
-          if (user) req.user = user;
-        } catch (e) { }
+      decoded = verifyAccessToken(token);
+      if (!decoded) {
+        res.clearCookie('accessToken');
+        res.clearCookie('refreshToken');
+        token = null;
       }
+    }
+
+    if (!decoded) {
+      const authHeader = req.headers.authorization || req.headers.Authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.split(' ')[1];
+        decoded = verifyAccessToken(token);
+      }
+    }
+
+    if (decoded) {
+      try {
+        const User = require('../models/User');
+        const user = await User.findById(decoded.id);
+        if (user) req.user = user;
+      } catch (e) { }
     }
   }
 

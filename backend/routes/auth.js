@@ -136,15 +136,34 @@ passport.deserializeUser(async (id, done) => {
 
 const isSuperAdmin = async (req, res, next) => {
   if (!req.user && !req.isAuthenticated()) {
-    const token = req.cookies?.accessToken || (req.headers.authorization || req.headers.Authorization)?.split(' ')[1];
+    // 1. Try to get token from Cookies first
+    let token = req.cookies?.accessToken;
+    let decoded = null;
+
     if (token) {
-      const decoded = verifyAccessToken(token);
-      if (decoded) {
-        try {
-          const user = await User.findById(decoded.id);
-          if (user) req.user = user;
-        } catch (e) { }
+      decoded = verifyAccessToken(token);
+      if (!decoded) {
+        // Invalid cookie (old secret/DB) -> Clear it to unblock client
+        res.clearCookie('accessToken');
+        res.clearCookie('refreshToken');
+        token = null;
       }
+    }
+
+    // 2. Fallback to Authorization header
+    if (!decoded) {
+      const authHeader = req.headers.authorization || req.headers.Authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.split(' ')[1];
+        decoded = verifyAccessToken(token);
+      }
+    }
+
+    if (decoded) {
+      try {
+        const user = await User.findById(decoded.id);
+        if (user) req.user = user;
+      } catch (e) { }
     }
   }
 
@@ -270,16 +289,31 @@ router.get('/user', async (req, res) => {
   try {
     // 1. Check for JWT in cookies or Authorization header if not already authenticated
     if (!req.user && !req.isAuthenticated()) {
-      const token = req.cookies?.accessToken || (req.headers.authorization || req.headers.Authorization)?.split(' ')[1];
+      let token = req.cookies?.accessToken;
+      let decoded = null;
+
       if (token) {
-        const { verifyAccessToken } = require('../utils/tokenUtils');
-        const decoded = verifyAccessToken(token);
-        if (decoded) {
-          try {
-            const user = await User.findById(decoded.id);
-            if (user) req.user = user;
-          } catch (e) { }
+        decoded = verifyAccessToken(token);
+        if (!decoded) {
+          res.clearCookie('accessToken');
+          res.clearCookie('refreshToken');
+          token = null;
         }
+      }
+
+      if (!decoded) {
+        const authHeader = req.headers.authorization || req.headers.Authorization;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          token = authHeader.split(' ')[1];
+          decoded = verifyAccessToken(token);
+        }
+      }
+
+      if (decoded) {
+        try {
+          const user = await User.findById(decoded.id);
+          if (user) req.user = user;
+        } catch (e) { }
       }
     }
 
