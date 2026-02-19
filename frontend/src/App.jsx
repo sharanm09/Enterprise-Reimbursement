@@ -18,6 +18,7 @@ import SuperadminApprovals from './pages/SuperadminApprovals';
 import ManageDepartments from './pages/ManageDepartments';
 import ManageCostCenters from './pages/ManageCostCenters';
 import ManageProjects from './pages/ManageProjects';
+import CompanyMaster from './pages/CompanyMaster';
 import TestLogin from './pages/TestLogin';
 import { FiLogIn } from 'react-icons/fi';
 
@@ -143,7 +144,8 @@ function AppContent() {
       '/hr-approvals': 'hr-approvals',
       '/finance-approvals': 'finance-approvals',
       '/superadmin-approvals': 'superadmin-approvals',
-      '/all-reimbursements': 'all-reimbursements'
+      '/all-reimbursements': 'all-reimbursements',
+      '/company-master': 'company-master'
     };
     return pageMap[path] || 'dashboard';
   };
@@ -201,7 +203,10 @@ function AppContent() {
       <Routes>
         <Route path="/dashboard" element={<Dashboard user={user} />} />
         {user?.role?.name === 'superadmin' && (
-          <Route path="/users" element={<UserManagement />} />
+          <>
+            <Route path="/users" element={<UserManagement />} />
+            <Route path="/company-master" element={<CompanyMaster />} />
+          </>
         )}
         {(user?.role?.name === 'superadmin' || user?.role?.name === 'hr') && (
           <>

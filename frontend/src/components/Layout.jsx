@@ -13,7 +13,8 @@ import {
   FiChevronDown,
   FiLogOut,
   FiMenu,
-  FiX
+  FiX,
+  FiSettings
 } from 'react-icons/fi';
 import bgImage from '../images/bg.png';
 import logo from '../images/logo.svg';
@@ -86,6 +87,7 @@ const Layout = ({ children, user, onLogout, onNavigate, currentPage }) => {
         { name: 'Departments', path: '/departments', icon: FiBriefcase, roles: ['superadmin', 'hr'] },
         { name: 'Cost Centers', path: '/cost-centers', icon: FiDollarSign, roles: ['superadmin', 'hr'] },
         { name: 'Projects', path: '/projects', icon: FiFolder, roles: ['superadmin', 'hr'] },
+        { name: 'Company Master', path: '/company-master', icon: FiSettings, roles: ['superadmin'] },
       ]
     },
     {
@@ -134,7 +136,8 @@ const Layout = ({ children, user, onLogout, onNavigate, currentPage }) => {
       '/manager-approvals': 'manager-approvals',
       '/hr-approvals': 'hr-approvals',
       '/finance-approvals': 'finance-approvals',
-      '/all-reimbursements': 'all-reimbursements'
+      '/all-reimbursements': 'all-reimbursements',
+      '/company-master': 'company-master'
     };
     return pageMap[path] === currentPage;
   };

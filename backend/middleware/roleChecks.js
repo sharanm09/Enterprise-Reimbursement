@@ -7,21 +7,36 @@ function createRoleCheckMiddleware(requiredRole) {
   return async (req, res, next) => {
     // If not already authenticated by a previous middleware (like isAuthenticated)
     if (!req.user && !req.isAuthenticated()) {
-      const token = req.cookies?.accessToken || (req.headers.authorization || req.headers.Authorization)?.split(' ')[1];
-      if (token) {
-        const decoded = verifyAccessToken(token);
+      let token = req.cookies?.accessToken;
+      let decoded = null;
 
-        if (decoded) {
-          try {
-            const User = require('../models/User');
-            const user = await User.findById(decoded.id);
-            if (user) {
-              req.user = user;
-            }
-          } catch (error) {
-            // Log error but continue to failure check
-            logger.error(`Error in role check JWT auth: ${error.message}`);
+      if (token) {
+        decoded = verifyAccessToken(token);
+        if (!decoded) {
+          res.clearCookie('accessToken');
+          res.clearCookie('refreshToken');
+          token = null;
+        }
+      }
+
+      if (!decoded) {
+        const authHeader = req.headers.authorization || req.headers.Authorization;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          token = authHeader.split(' ')[1];
+          decoded = verifyAccessToken(token);
+        }
+      }
+
+      if (decoded) {
+        try {
+          const User = require('../models/User');
+          const user = await User.findById(decoded.id);
+          if (user) {
+            req.user = user;
           }
+        } catch (error) {
+          // Log error but continue to failure check
+          logger.error(`Error in role check JWT auth: ${error.message}`);
         }
       }
     }
